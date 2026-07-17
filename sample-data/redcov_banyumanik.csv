@@ -1,0 +1,6 @@
+geohash7,latitude_geohash7,longitude_geohash7,avg_rsrp,total_subscriber_count,red_cov_category
+qqwxbvr,-7.04567,110.434,-105.316,43,RED ENGINEERING
+qqwxbvs,-7.04610,110.435,-98.210,28,BAD NON POTENTIAL
+qqwxbvt,-7.04653,110.436,-101.850,51,RED OPTIM
+qqwxbvu,-7.04702,110.437,-92.400,19,GOOD COVERAGE
+invalid-row,,110.438,-110.000,8,RED ENGINEERING
