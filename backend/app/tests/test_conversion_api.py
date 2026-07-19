@@ -1,5 +1,8 @@
 import asyncio
+import sqlite3
 import xml.etree.ElementTree as ET
+import zipfile
+from io import BytesIO
 
 import geopandas as gpd
 import httpx
@@ -39,17 +42,44 @@ def test_kml_and_gpkg_outputs(
             f".//{{{KML_NAMESPACE}}}PolyStyle/{{{KML_NAMESPACE}}}color"
         )
     }
-    assert {"990000FF", "99808080"}.issubset(fill_colors)
+    assert {"990000FF", "9950B000"}.issubset(fill_colors)
+    icon_colors = {
+        element.text
+        for element in root.findall(
+            f".//{{{KML_NAMESPACE}}}IconStyle/{{{KML_NAMESPACE}}}color"
+        )
+    }
+    assert icon_colors == {"FF0000FF"}
+    points = root.findall(f".//{{{KML_NAMESPACE}}}Point")
+    assert len(points) == result.valid_rows
+    first_center = points[0].find(f"{{{KML_NAMESPACE}}}coordinates")
+    assert first_center is not None
+    assert first_center.text == "110.4340000000,-7.0456700000,0"
 
     gpkg = gpd.read_file(gpkg_path, layer="coverage_grid", engine="pyogrio")
+    centers = gpd.read_file(gpkg_path, layer="coverage_centers", engine="pyogrio")
     assert len(gpkg) == result.valid_rows
+    assert len(centers) == result.valid_rows
     assert gpkg.geometry.geom_type.eq("Polygon").all()
+    assert centers.geometry.geom_type.eq("Point").all()
+    assert centers.geometry.x.iloc[0] == 110.434
+    assert centers.geometry.y.iloc[0] == -7.04567
     assert {
         "avg_rsrp",
         "total_subscriber_count",
         "red_cov_category",
         "style_color",
     }.issubset(gpkg.columns)
+    with sqlite3.connect(gpkg_path) as connection:
+        stored_styles = connection.execute(
+            "SELECT f_table_name, useAsDefault, styleQML FROM layer_styles ORDER BY f_table_name"
+        ).fetchall()
+    assert [row[0] for row in stored_styles] == ["coverage_centers", "coverage_grid"]
+    assert all(row[1] == 1 for row in stored_styles)
+    assert "singleSymbol" in stored_styles[0][2]
+    assert "255,0,0,255" in stored_styles[0][2]
+    assert 'name="size_unit" type="QString" value="Pixel"' in stored_styles[0][2]
+    assert "categorizedSymbol" in stored_styles[1][2]
 
 
 def test_api_inspect_convert_metadata_and_non_csv_rejection() -> None:
@@ -86,6 +116,24 @@ def test_api_inspect_convert_metadata_and_non_csv_rejection() -> None:
             assert response.headers["x-valid-rows"] == "1"
             assert response.headers["x-invalid-rows"] == "1"
             assert "coverage_grid.kml" in response.headers["content-disposition"]
+
+            qgis_response = await client.post(
+                "/api/convert",
+                files={"file": ("coverage.csv", csv_bytes, "text/csv")},
+                data={
+                    "longitude_column": "longitude_geohash7",
+                    "latitude_column": "latitude_geohash7",
+                    "name_column": "geohash7",
+                    "category_column": "red_cov_category",
+                    "output_format": "qgis",
+                },
+            )
+            assert qgis_response.status_code == 200
+            assert "coverage_grid.zip" in qgis_response.headers["content-disposition"]
+            with zipfile.ZipFile(BytesIO(qgis_response.content)) as archive:
+                assert archive.namelist() == ["coverage_grid.gpkg", "coverage_grid.qgs"]
+                project = ET.fromstring(archive.read("coverage_grid.qgs"))
+            assert "https://mt0.google.com/vt/lyrs=s" in ET.tostring(project, encoding="unicode")
 
             rejected = await client.post(
                 "/api/csv/inspect",

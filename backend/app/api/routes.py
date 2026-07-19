@@ -2,6 +2,7 @@ import logging
 import os
 import shutil
 import tempfile
+import zipfile
 from pathlib import Path
 from typing import Annotated
 
@@ -19,6 +20,7 @@ from app.services.csv_service import (
 from app.services.geometry_service import build_grid_features
 from app.services.gpkg_service import write_gpkg
 from app.services.kml_service import write_kml
+from app.services.qgis_project_service import write_qgis_project
 from app.utils.filenames import output_filename, safe_csv_filename
 
 router = APIRouter(prefix="/api")
@@ -94,7 +96,7 @@ async def convert_csv_endpoint(
         )
         result = build_grid_features(parsed.dataframe, options)
 
-        extension = options.output_format.value
+        extension = "zip" if options.output_format == OutputFormat.QGIS else options.output_format.value
         download_name = output_filename(file.filename or "upload.csv", extension)
         temporary_directory = tempfile.mkdtemp(prefix="coverage-grid-")
         output_path = Path(temporary_directory) / download_name
@@ -102,9 +104,20 @@ async def convert_csv_endpoint(
         if options.output_format == OutputFormat.KML:
             write_kml(result.geographic, output_path, options.fill_opacity)
             media_type = "application/vnd.google-earth.kml+xml"
-        else:
+        elif options.output_format == OutputFormat.GPKG:
             write_gpkg(result.geographic, output_path)
             media_type = "application/geopackage+sqlite3"
+        else:
+            gpkg_name = f"{output_path.stem}.gpkg"
+            qgs_name = f"{output_path.stem}.qgs"
+            gpkg_path = output_path.with_name(gpkg_name)
+            qgs_path = output_path.with_name(qgs_name)
+            write_gpkg(result.geographic, gpkg_path)
+            write_qgis_project(qgs_path, gpkg_name)
+            with zipfile.ZipFile(output_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+                archive.write(gpkg_path, gpkg_name)
+                archive.write(qgs_path, qgs_name)
+            media_type = "application/zip"
 
         # The generated file is copied into the response before its temporary
         # directory is removed, so no server path remains after this request.

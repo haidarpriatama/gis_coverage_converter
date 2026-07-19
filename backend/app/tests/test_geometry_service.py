@@ -4,6 +4,7 @@ import pandas as pd
 import pytest
 
 from app.services.geometry_service import build_grid_features
+from app.utils.colors import category_to_hex
 
 
 def test_valid_coordinates_invalid_rows_geometry_and_attributes(
@@ -59,3 +60,17 @@ def test_all_invalid_coordinates_fail(conversion_options) -> None:
     )
     with pytest.raises(ValueError, match="no valid coordinate"):
         build_grid_features(dataframe, coordinate_only_options)
+
+
+@pytest.mark.parametrize(
+    ("category", "expected"),
+    [
+        ("BAD NON POTENTIAL", "#00B050"),
+        ("NOT RED COV", "#0000FF"),
+        ("RED ENGINEERING", "#FF0000"),
+        ("RED OPTIM", "#FFFF00"),
+        ("UNKNOWN", "#808080"),
+    ],
+)
+def test_category_colors(category: str, expected: str) -> None:
+    assert category_to_hex(category) == expected

@@ -7,7 +7,7 @@ from pathlib import Path
 import geopandas as gpd
 import pandas as pd
 
-from app.utils.colors import category_to_hex, hex_to_kml_color
+from app.utils.colors import CENTER_POINT_COLOR, category_to_hex, hex_to_kml_color
 
 KML_NAMESPACE = "http://www.opengis.net/kml/2.2"
 ET.register_namespace("", KML_NAMESPACE)
@@ -68,6 +68,15 @@ def write_kml(geodataframe: gpd.GeoDataFrame, output_path: Path, fill_opacity: f
     for category_key in sorted(categories):
         category, hex_color = categories[category_key]
         style = ET.SubElement(document, _tag("Style"), {"id": _style_id(category)})
+        icon_style = ET.SubElement(style, _tag("IconStyle"))
+        ET.SubElement(icon_style, _tag("color")).text = hex_to_kml_color(
+            CENTER_POINT_COLOR, 1.0
+        )
+        ET.SubElement(icon_style, _tag("scale")).text = "0.8"
+        icon = ET.SubElement(icon_style, _tag("Icon"))
+        ET.SubElement(icon, _tag("href")).text = (
+            "http://maps.google.com/mapfiles/kml/shapes/shaded_dot.png"
+        )
         line_style = ET.SubElement(style, _tag("LineStyle"))
         ET.SubElement(line_style, _tag("color")).text = hex_to_kml_color(hex_color, 1.0)
         ET.SubElement(line_style, _tag("width")).text = "1.5"
@@ -101,7 +110,8 @@ def write_kml(geodataframe: gpd.GeoDataFrame, output_path: Path, fill_opacity: f
             data = ET.SubElement(extended_data, _tag("Data"), {"name": field})
             ET.SubElement(data, _tag("value")).text = _display(row.get(field))
 
-        polygon_element = ET.SubElement(placemark, _tag("Polygon"))
+        multi_geometry = ET.SubElement(placemark, _tag("MultiGeometry"))
+        polygon_element = ET.SubElement(multi_geometry, _tag("Polygon"))
         ET.SubElement(polygon_element, _tag("tessellate")).text = "1"
         outer_boundary = ET.SubElement(polygon_element, _tag("outerBoundaryIs"))
         linear_ring = ET.SubElement(outer_boundary, _tag("LinearRing"))
@@ -110,6 +120,13 @@ def write_kml(geodataframe: gpd.GeoDataFrame, output_path: Path, fill_opacity: f
             for longitude, latitude in row.geometry.exterior.coords
         )
         ET.SubElement(linear_ring, _tag("coordinates")).text = coordinates
+
+        point = ET.SubElement(multi_geometry, _tag("Point"))
+        center_longitude = float(row["longitude_geohash7"])
+        center_latitude = float(row["latitude_geohash7"])
+        ET.SubElement(point, _tag("coordinates")).text = (
+            f"{center_longitude:.10f},{center_latitude:.10f},0"
+        )
 
     tree = ET.ElementTree(root)
     ET.indent(tree, space="  ")

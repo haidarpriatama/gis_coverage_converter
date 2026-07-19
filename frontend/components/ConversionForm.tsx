@@ -164,6 +164,22 @@ export function ConversionForm() {
                   </div>
                 ))}
               </div>
+              <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs text-slate-600">
+                {[
+                  ["#00B050", "Bad Non Potential"],
+                  ["#0000FF", "Not Red Cov"],
+                  ["#FF0000", "Red Engineering"],
+                  ["#FFFF00", "Red Optim"],
+                ].map(([color, label]) => (
+                  <span key={label} className="flex items-center gap-1.5">
+                    <span
+                      className="size-2.5 rounded-full ring-1 ring-black/10"
+                      style={{ backgroundColor: color }}
+                    />
+                    {label}
+                  </span>
+                ))}
+              </div>
             </section>
 
             <fieldset className="border-t border-slate-100 pt-8" disabled={busy}>
@@ -171,10 +187,11 @@ export function ConversionForm() {
                 <span className="grid size-7 place-items-center rounded-lg bg-teal-50 text-xs font-extrabold text-teal-700">3</span>
                 <legend className="font-bold text-slate-950">Choose output format</legend>
               </div>
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-3">
                 {[
                   { value: "kml", title: "KML", detail: "For Google Earth", badge: ".kml" },
                   { value: "gpkg", title: "GeoPackage", detail: "For QGIS", badge: ".gpkg" },
+                  { value: "qgis", title: "QGIS map package", detail: "Google Satellite included", badge: ".zip" },
                 ].map((format) => (
                   <label key={format.value} className="relative cursor-pointer">
                     <input {...register("outputFormat")} type="radio" value={format.value} className="peer sr-only" />

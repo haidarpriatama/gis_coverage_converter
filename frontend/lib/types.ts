@@ -1,4 +1,4 @@
-export type OutputFormat = "kml" | "gpkg";
+export type OutputFormat = "kml" | "gpkg" | "qgis";
 
 export type UiStatus =
   | "initial"

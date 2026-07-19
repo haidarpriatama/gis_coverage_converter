@@ -14,7 +14,7 @@ export const conversionSchema = z.object({
   latitudeColumn: z.string().min(1, "Select a latitude column."),
   nameColumn: z.string().optional(),
   categoryColumn: z.string().optional(),
-  outputFormat: z.enum(["kml", "gpkg"], {
+  outputFormat: z.enum(["kml", "gpkg", "qgis"], {
     error: "Select an output format.",
   }),
 });

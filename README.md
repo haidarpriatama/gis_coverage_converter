@@ -1,6 +1,6 @@
 # CSV Coverage Grid Converter
 
-CSV Coverage Grid Converter adalah demo aplikasi web tanpa database untuk mengubah setiap baris koordinat CSV menjadi polygon persegi **153 m × 153 m**. Hasil dapat diunduh sebagai KML untuk Google Earth atau GeoPackage (GPKG) untuk QGIS. Upload berada di memori, output dibuat di direktori sementara, disalin ke response, lalu direktori tersebut dihapus sebelum response dikirim.
+CSV Coverage Grid Converter adalah demo aplikasi web tanpa database untuk mengubah setiap baris koordinat CSV menjadi polygon persegi **153 m × 153 m**. Hasil dapat diunduh sebagai KML untuk Google Earth, GeoPackage (GPKG), atau paket peta QGIS. Upload berada di memori, output dibuat di direktori sementara, disalin ke response, lalu direktori tersebut dihapus sebelum response dikirim.
 
 ## Fitur
 
@@ -10,8 +10,9 @@ CSV Coverage Grid Converter adalah demo aplikasi web tanpa database untuk mengub
 - Pemetaan kolom longitude, latitude, nama grid, dan kategori.
 - Validasi numerik dan rentang koordinat; baris tidak valid dilewati dan dihitung.
 - Polygon persegi dibuat dalam projected CRS berbasis meter, bukan penambahan derajat kasar.
-- KML dengan shared styles, fill opacity 60%, outline, popup HTML, dan `ExtendedData`.
-- GPKG EPSG:4326 dengan layer `coverage_grid`, atribut typed, dan `style_color`.
+- KML dengan shared styles, fill opacity 60%, outline, titik pusat, popup HTML, dan `ExtendedData`.
+- GPKG EPSG:4326 dengan layer polygon `coverage_grid`, layer titik merah `coverage_centers`, atribut typed, `style_color`, dan embedded default QGIS style.
+- Paket peta QGIS (`.zip`) berisi GPKG dan project `.qgs` yang membuka Google Satellite otomatis.
 - Tidak memakai database, autentikasi, peta, histori, atau penyimpanan permanen.
 
 ## Stack
@@ -44,6 +45,8 @@ csv-coverage-grid-converter/
 
 Prasyarat: Node.js 20+ (Node.js 22 direkomendasikan), Python 3.10+, dan library sistem GDAL. Pada Debian/Ubuntu, bila wheel Python tidak cukup, pasang `gdal-bin libgdal-dev libspatialindex-dev`.
 
+Install pertama kali tetap perlu dilakukan satu kali untuk dependency backend dan frontend.
+
 Backend:
 
 ```bash
@@ -64,7 +67,20 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Buka `http://localhost:3000`. Dokumentasi OpenAPI tersedia di `http://localhost:8000/docs`, sedangkan health check berada di `http://localhost:8000/api/health`.
+Setelah dependency terpasang, frontend dan backend bisa dijalankan bersama dari root project:
+
+```bash
+cd /home/haidar/website/csv-coverage-grid-converter
+npm run dev
+```
+
+Jika port default sedang dipakai, ganti port saat menjalankan:
+
+```bash
+BACKEND_PORT=8001 FRONTEND_PORT=3001 npm run dev
+```
+
+Buka `http://localhost:3000` untuk port default, atau `http://localhost:3001` bila memakai contoh port custom di atas. Dokumentasi OpenAPI tersedia di `http://localhost:8000/docs`, sedangkan health check berada di `http://localhost:8000/api/health` atau port backend custom yang kamu pilih.
 
 ## Menjalankan dengan Docker
 
@@ -103,9 +119,9 @@ CSV boleh memiliki kolom tambahan. Pada demo ini hanya atribut utama di atas yan
 1. Buka frontend dan drop/pilih file `.csv`.
 2. Tunggu inspeksi header dan jumlah baris.
 3. Periksa dropdown longitude, latitude, nama grid, dan kategori. Nama kolom standar otomatis dipilih bila ditemukan.
-4. Pilih KML atau GeoPackage.
+4. Pilih KML, GeoPackage, atau QGIS map package.
 5. Klik **Convert and download**.
-6. Browser langsung mengunduh `<nama_input>_grid.kml` atau `<nama_input>_grid.gpkg`. Ringkasan menampilkan total, valid, dan skipped rows.
+6. Browser langsung mengunduh `<nama_input>_grid.kml`, `<nama_input>_grid.gpkg`, atau `<nama_input>_grid.zip`. Ringkasan menampilkan total, valid, dan skipped rows.
 
 Secara internal backend mengambil median koordinat valid untuk menentukan zona UTM dan hemisfer. Titik EPSG:4326 ditransformasikan ke UTM, dibuat kotak Shapely dengan setengah sisi 76,5 meter, kemudian ditransformasikan kembali ke EPSG:4326. Satu CRS dipakai per file agar seluruh feature konsisten.
 
@@ -116,13 +132,25 @@ Secara internal backend mengambil median koordinat valid untuk menentukan zona U
 Di Google Earth Pro gunakan **File → Open**, pilih file `.kml`, lalu klik polygon. Popup menampilkan geohash, average RSRP, subscriber count, kategori, serta koordinat pusat. Warna awal:
 
 - `RED ENGINEERING`: merah.
-- `RED OPTIM`: oranye.
-- `BAD NON POTENTIAL`: abu-abu.
-- kategori lain: kuning.
+- `RED OPTIM`: kuning.
+- `BAD NON POTENTIAL`: hijau.
+- `NOT RED COV`: biru.
+- kategori lain: abu-abu.
+
+Setiap placemark KML berisi polygon berwarna kategori dan marker titik merah tepat pada longitude-latitude pusat grid.
 
 ### QGIS
 
-Drag file `.gpkg` ke QGIS atau gunakan **Layer → Add Layer → Add Vector Layer**, kemudian pilih layer `coverage_grid`. CRS layer adalah EPSG:4326. Gunakan field `style_color` untuk categorized/data-defined symbology bila dibutuhkan.
+Drag file `.gpkg` ke QGIS atau gunakan **Layer → Add Layer → Add Vector Layer**, lalu tambahkan kedua layer berikut:
+
+- `coverage_grid`: polygon 153 m × 153 m.
+- `coverage_centers`: titik longitude-latitude pusat polygon, memakai satu warna merah untuk semua kategori. Marker memakai ukuran pixel agar tidak ikut membesar/mengecil terhadap skala peta saat zoom.
+
+Keduanya menggunakan EPSG:4326 dan memiliki default categorized style yang disimpan pada tabel style GeoPackage. Jika instalasi QGIS tidak otomatis memakai embedded style, buka **Layer Properties → Symbology → Categorized**, pilih field `red_cov_category`, lalu gunakan warna dari `style_color`.
+
+GeoPackage adalah data vektor dan tidak menyertakan basemap. Untuk membuka langsung dengan basemap, pilih **QGIS map package** saat convert, ekstrak ZIP, lalu buka file `.qgs`. Project itu memuat Google Satellite (`https://mt0.google.com/vt/lyrs=s&x={x}&y={y}&z={z}`) di bawah coverage grid dan center points; koneksi internet tetap diperlukan untuk mengambil tile.
+
+Untuk melihat atribut feature di QGIS, aktifkan tool **Identify Features** (ikon `i`), lalu klik polygon grid atau titik pusat. Alternatifnya, klik kanan layer dan pilih **Open Attribute Table**. Klik biasa dengan tool pan/select tidak menampilkan popup seperti Google Earth.
 
 ## Endpoint API
 
@@ -156,7 +184,8 @@ npm run build
 - Koordinat di wilayah kutub berada di luar area penggunaan praktis UTM walaupun validasi numerik menerima rentang EPSG:4326. Data coverage seluler yang menjadi target demo biasanya bersifat lokal dan jauh dari kutub.
 - KML ditulis langsung menggunakan XML standar OGC. Ini disengaja agar export KML tetap bekerja saat build GDAL tidak menyediakan driver `KML`/`LIBKML`.
 - GPKG memerlukan driver `GPKG` pada GDAL yang digunakan Pyogrio. Image Docker memasang GDAL dan dependency terkait.
-- Style QGIS belum disimpan sebagai layer style; `style_color` disediakan untuk styling lanjutan.
+- Pemuatan otomatis embedded QGIS style dapat bergantung pada versi dan pengaturan QGIS; field `style_color` tetap tersedia sebagai fallback.
+- Basemap dan citra satelit tidak disimpan dalam GPKG karena output aplikasi hanya berisi feature vektor hasil konversi. Gunakan QGIS map package untuk project yang mereferensikan Google Satellite.
 - Semua feature dari satu CSV dimuat ke memori selama request. Batas 50 MB sesuai scope demo, bukan pipeline untuk file geospasial skala sangat besar.
 
 ## Troubleshooting GDAL, KML, dan GPKG
