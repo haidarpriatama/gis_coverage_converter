@@ -8,8 +8,8 @@ import { ColumnMapper } from "@/components/ColumnMapper";
 import { ConversionSummary } from "@/components/ConversionSummary";
 import { CsvUploader } from "@/components/CsvUploader";
 import { DownloadButton } from "@/components/DownloadButton";
-import { convertCsv, inspectCsv, saveBlob } from "@/lib/api";
-import type { ConversionSummaryData, CsvInspection, UiStatus } from "@/lib/types";
+import { convertCsv, inspectCsvWithProgress, saveBlob } from "@/lib/api";
+import type { ConversionSummaryData, CsvInspection, RequestProgress, UiStatus } from "@/lib/types";
 import {
   conversionSchema,
   csvFileSchema,
@@ -18,7 +18,7 @@ import {
 
 const statusLabels: Record<UiStatus, string> = {
   initial: "Waiting for CSV",
-  uploading: "Reading file",
+  uploading: "Uploading CSV",
   inspecting: "Inspecting columns",
   ready: "Ready to convert",
   converting: "Creating polygons",
@@ -26,12 +26,58 @@ const statusLabels: Record<UiStatus, string> = {
   error: "Needs attention",
 };
 
+interface ProgressState {
+  label: string;
+  detail: string;
+  percent: number | null;
+}
+
+function fileSizeLabel(size: number): string {
+  const units = ["B", "KB", "MB", "GB"];
+  let value = size;
+  let unitIndex = 0;
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex += 1;
+  }
+  return `${value.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
+}
+
+function progressDetail(progress: RequestProgress): string {
+  return `${fileSizeLabel(progress.loaded)} of ${fileSizeLabel(progress.total)} uploaded`;
+}
+
+function ProgressPanel({ progress }: { progress: ProgressState }) {
+  return (
+    <div className="mt-4 rounded-xl border border-teal-100 bg-teal-50/70 px-4 py-3">
+      <div className="flex items-center justify-between gap-3 text-xs">
+        <span className="font-bold text-teal-950">{progress.label}</span>
+        <span className="shrink-0 font-medium text-teal-700">
+          {progress.percent === null ? "Processing" : `${progress.percent}%`}
+        </span>
+      </div>
+      <div className="mt-2 h-2 overflow-hidden rounded-full bg-white">
+        {progress.percent === null ? (
+          <div className="h-full w-1/2 animate-pulse rounded-full bg-teal-600" />
+        ) : (
+          <div
+            className="h-full rounded-full bg-teal-600 transition-all"
+            style={{ width: `${progress.percent}%` }}
+          />
+        )}
+      </div>
+      <p className="mt-2 text-xs text-teal-800">{progress.detail}</p>
+    </div>
+  );
+}
+
 export function ConversionForm() {
   const [file, setFile] = useState<File | null>(null);
   const [inspection, setInspection] = useState<CsvInspection | null>(null);
   const [status, setStatus] = useState<UiStatus>("initial");
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<ConversionSummaryData | null>(null);
+  const [progress, setProgress] = useState<ProgressState | null>(null);
 
   const {
     register,
@@ -66,17 +112,39 @@ export function ConversionForm() {
     setSummary(null);
     setInspection(null);
     setFile(null);
+    setProgress({
+      label: "Uploading CSV for inspection",
+      detail: "Starting upload",
+      percent: 0,
+    });
     const validated = csvFileSchema.safeParse(nextFile);
     if (!validated.success) {
       setError(validated.error.issues[0]?.message ?? "Invalid CSV file.");
       setStatus("error");
+      setProgress(null);
       return;
     }
 
     setFile(nextFile);
     setStatus("inspecting");
     try {
-      const result = await inspectCsv(nextFile);
+      const result = await inspectCsvWithProgress(
+        nextFile,
+        (uploadProgress) => {
+          setProgress({
+            label: "Uploading CSV for inspection",
+            detail: progressDetail(uploadProgress),
+            percent: uploadProgress.percent,
+          });
+        },
+        () => {
+          setProgress({
+            label: "Reading CSV structure",
+            detail: "Detecting delimiter, reading header, and counting rows",
+            percent: null,
+          });
+        },
+      );
       setInspection(result);
       reset({
         longitudeColumn: result.suggested_columns.longitude ?? "",
@@ -86,9 +154,11 @@ export function ConversionForm() {
         outputFormat: undefined,
       });
       setStatus("ready");
+      setProgress(null);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "The CSV could not be inspected.");
       setStatus("error");
+      setProgress(null);
     }
   }
 
@@ -97,14 +167,41 @@ export function ConversionForm() {
     setStatus("converting");
     setError(null);
     setSummary(null);
+    setProgress({
+      label: "Uploading CSV for conversion",
+      detail: "Starting upload",
+      percent: 0,
+    });
     try {
-      const result = await convertCsv(file, formValues);
+      const result = await convertCsv(file, formValues, {
+        onUploadProgress: (uploadProgress) => {
+          setProgress({
+            label: "Uploading CSV for conversion",
+            detail: progressDetail(uploadProgress),
+            percent: uploadProgress.percent,
+          });
+        },
+        onProcessingStart: () => {
+          setProgress({
+            label: "Converting CSV",
+            detail: "Validating coordinates, building 153 m grids, and writing output",
+            percent: null,
+          });
+        },
+      });
+      setProgress({
+        label: "Preparing download",
+        detail: "Saving the generated file to your browser",
+        percent: 100,
+      });
       saveBlob(result.blob, result.summary.filename);
       setSummary(result.summary);
       setStatus("download-ready");
+      setProgress(null);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Conversion failed.");
       setStatus("error");
+      setProgress(null);
     }
   });
 
@@ -120,6 +217,8 @@ export function ConversionForm() {
 
       <div className="p-6 sm:p-8">
         <CsvUploader file={file} busy={busy} onFile={handleFile} />
+
+        {progress && <ProgressPanel progress={progress} />}
 
         {file && (
           <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl bg-slate-50 px-4 py-3 text-sm">

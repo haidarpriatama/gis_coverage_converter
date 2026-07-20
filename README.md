@@ -1,10 +1,11 @@
 # CSV Coverage Grid Converter
 
-CSV Coverage Grid Converter adalah demo aplikasi web tanpa database untuk mengubah setiap baris koordinat CSV menjadi polygon persegi **153 m × 153 m**. Hasil dapat diunduh sebagai KML untuk Google Earth, GeoPackage (GPKG), atau paket peta QGIS. Upload berada di memori, output dibuat di direktori sementara, disalin ke response, lalu direktori tersebut dihapus sebelum response dikirim.
+CSV Coverage Grid Converter adalah demo aplikasi web tanpa database untuk mengubah setiap baris koordinat CSV menjadi polygon persegi **153 m × 153 m**. Hasil dapat diunduh sebagai KML untuk Google Earth, GeoPackage (GPKG), atau paket peta QGIS. Upload dan output dibuat di direktori sementara, dikirim sebagai download, lalu dibersihkan setelah response selesai.
 
 ## Fitur
 
-- Upload CSV hingga 50 MB, dengan delimiter koma atau titik koma.
+- Upload CSV hingga 1 GB secara default, dengan delimiter koma atau titik koma.
+- Progress upload ditampilkan di frontend; saat backend memproses file, UI menampilkan tahap proses yang sedang berjalan.
 - Mendukung UTF-8, UTF-8 dengan BOM, dan fallback Windows-1252.
 - Inspeksi header, jumlah baris, serta deteksi otomatis kolom standar.
 - Pemetaan kolom longitude, latitude, nama grid, dan kategori.
@@ -43,7 +44,7 @@ csv-coverage-grid-converter/
 
 ## Menjalankan secara lokal
 
-Prasyarat: Node.js 20+ (Node.js 22 direkomendasikan), Python 3.10+, dan library sistem GDAL. Pada Debian/Ubuntu, bila wheel Python tidak cukup, pasang `gdal-bin libgdal-dev libspatialindex-dev`.
+Prasyarat: Node.js 20+ (Node.js 22 direkomendasikan), Python 3.10+, dan library sistem GDAL. Pada Debian/Ubuntu, bila wheel Python tidak cukup, pasang `gdal-bin libgdal-dev libspatialindex-dev`. Untuk CSV ratusan MB, pastikan RAM dan temporary disk cukup karena Pandas/GeoPandas tetap memuat data valid untuk proses geometri.
 
 Install pertama kali tetap perlu dilakukan satu kali untuk dependency backend dan frontend.
 
@@ -123,6 +124,8 @@ CSV boleh memiliki kolom tambahan. Pada demo ini hanya atribut utama di atas yan
 5. Klik **Convert and download**.
 6. Browser langsung mengunduh `<nama_input>_grid.kml`, `<nama_input>_grid.gpkg`, atau `<nama_input>_grid.zip`. Ringkasan menampilkan total, valid, dan skipped rows.
 
+Untuk file besar, frontend menampilkan progress upload aktual dari browser. Setelah upload selesai, progress berubah menjadi tahap proses backend seperti membaca CSV, validasi koordinat, pembuatan grid, dan penulisan output. Persentase detail per baris belum tersedia karena endpoint demo masih mengembalikan file download langsung, bukan job asynchronous dengan endpoint status.
+
 Secara internal backend mengambil median koordinat valid untuk menentukan zona UTM dan hemisfer. Titik EPSG:4326 ditransformasikan ke UTM, dibuat kotak Shapely dengan setengah sisi 76,5 meter, kemudian ditransformasikan kembali ke EPSG:4326. Satu CRS dipakai per file agar seluruh feature konsisten.
 
 ## Membuka output
@@ -186,7 +189,7 @@ npm run build
 - GPKG memerlukan driver `GPKG` pada GDAL yang digunakan Pyogrio. Image Docker memasang GDAL dan dependency terkait.
 - Pemuatan otomatis embedded QGIS style dapat bergantung pada versi dan pengaturan QGIS; field `style_color` tetap tersedia sebagai fallback.
 - Basemap dan citra satelit tidak disimpan dalam GPKG karena output aplikasi hanya berisi feature vektor hasil konversi. Gunakan QGIS map package untuk project yang mereferensikan Google Satellite.
-- Semua feature dari satu CSV dimuat ke memori selama request. Batas 50 MB sesuai scope demo, bukan pipeline untuk file geospasial skala sangat besar.
+- Semua feature dari satu CSV masih dimuat ke memori selama request setelah upload selesai. Upload disimpan sementara ke disk dan batas default naik menjadi 1 GB, tetapi CSV 700 MB tetap membutuhkan resource server yang besar saat Pandas/GeoPandas membangun output.
 
 ## Troubleshooting GDAL, KML, dan GPKG
 

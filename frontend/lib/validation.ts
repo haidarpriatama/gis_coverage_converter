@@ -5,8 +5,8 @@ export const csvFileSchema = z
   .refine((file) => file.name.toLowerCase().endsWith(".csv"), "Choose a .csv file.")
   .refine((file) => file.size > 0, "The CSV file is empty.")
   .refine(
-    (file) => file.size <= 50 * 1024 * 1024,
-    "The CSV file must be 50 MB or smaller.",
+    (file) => file.size <= 1024 * 1024 * 1024,
+    "The CSV file must be 1 GB or smaller.",
   );
 
 export const conversionSchema = z.object({

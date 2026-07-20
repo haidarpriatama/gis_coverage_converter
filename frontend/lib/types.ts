@@ -37,3 +37,9 @@ export interface ConversionRequest {
   categoryColumn?: string;
   outputFormat: OutputFormat;
 }
+
+export interface RequestProgress {
+  loaded: number;
+  total: number;
+  percent: number;
+}

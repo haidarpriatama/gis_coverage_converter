@@ -62,7 +62,7 @@ export function CsvUploader({ file, busy, onFile }: CsvUploaderProps) {
           {file ? "Choose a different CSV" : "Drop your CSV here"}
         </span>
         <span className="mt-1.5 text-sm text-slate-500">
-          or <span className="font-medium text-teal-700">browse files</span> · up to 50 MB
+          or <span className="font-medium text-teal-700">browse files</span> · up to 1 GB
         </span>
       </button>
     </div>

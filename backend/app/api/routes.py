@@ -6,15 +6,17 @@ import zipfile
 from pathlib import Path
 from typing import Annotated
 
+from collections.abc import AsyncIterator
+
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
-from fastapi.responses import Response
+from fastapi.responses import Response, StreamingResponse
 from pydantic import ValidationError
 
 from app.schemas.conversion import ConversionOptions, CsvInspection, OutputFormat
 from app.services.csv_service import (
     CsvValidationError,
-    inspect_csv,
-    parse_csv,
+    inspect_csv_path,
+    parse_csv_path,
     validate_csv_filename,
 )
 from app.services.geometry_service import build_grid_features
@@ -28,28 +30,52 @@ logger = logging.getLogger(__name__)
 
 
 def _max_upload_bytes() -> int:
-    raw_value = os.getenv("MAX_UPLOAD_SIZE_MB", "50")
+    raw_value = os.getenv("MAX_UPLOAD_SIZE_MB", "1024")
     try:
         size_mb = max(1, int(raw_value))
     except ValueError:
-        size_mb = 50
+        size_mb = 1024
     return size_mb * 1024 * 1024
 
 
-async def _read_upload(upload: UploadFile) -> bytes:
+async def _save_upload_to_temp(upload: UploadFile) -> tuple[str, Path]:
     limit = _max_upload_bytes()
-    content = await upload.read(limit + 1)
-    await upload.close()
-    if len(content) > limit:
-        raise HTTPException(
-            status_code=413,
-            detail=f"The file exceeds the {limit // (1024 * 1024)} MB upload limit.",
-        )
-    return content
+    temporary_directory = tempfile.mkdtemp(prefix="coverage-upload-")
+    upload_path = Path(temporary_directory) / safe_csv_filename(upload.filename)
+    total_size = 0
+    try:
+        with upload_path.open("wb") as output:
+            while chunk := await upload.read(1024 * 1024):
+                total_size += len(chunk)
+                if total_size > limit:
+                    raise HTTPException(
+                        status_code=413,
+                        detail=f"The file exceeds the {limit // (1024 * 1024)} MB upload limit.",
+                    )
+                output.write(chunk)
+    except Exception:
+        _cleanup_directory(temporary_directory)
+        raise
+    finally:
+        await upload.close()
+
+    if total_size == 0:
+        _cleanup_directory(temporary_directory)
+        raise HTTPException(status_code=400, detail="The CSV file is empty.")
+    return temporary_directory, upload_path
 
 
 def _cleanup_directory(path: str) -> None:
     shutil.rmtree(path, ignore_errors=True)
+
+
+async def _stream_file_and_cleanup(path: Path, temporary_directory: str) -> AsyncIterator[bytes]:
+    try:
+        with path.open("rb") as source:
+            while chunk := source.read(1024 * 1024):
+                yield chunk
+    finally:
+        _cleanup_directory(temporary_directory)
 
 
 @router.get("/health")
@@ -59,12 +85,16 @@ def health_check() -> dict[str, str]:
 
 @router.post("/csv/inspect", response_model=CsvInspection)
 async def inspect_csv_endpoint(file: Annotated[UploadFile, File(...)]) -> CsvInspection:
+    temporary_directory: str | None = None
     try:
         validate_csv_filename(file.filename)
-        content = await _read_upload(file)
-        return inspect_csv(safe_csv_filename(file.filename), content)
+        temporary_directory, upload_path = await _save_upload_to_temp(file)
+        return inspect_csv_path(safe_csv_filename(file.filename), upload_path)
     except CsvValidationError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    finally:
+        if temporary_directory:
+            _cleanup_directory(temporary_directory)
 
 
 @router.post("/convert", response_class=Response)
@@ -82,8 +112,8 @@ async def convert_csv_endpoint(
     temporary_directory: str | None = None
     try:
         validate_csv_filename(file.filename)
-        content = await _read_upload(file)
-        parsed = parse_csv(content)
+        temporary_directory, upload_path = await _save_upload_to_temp(file)
+        parsed = parse_csv_path(upload_path)
         options = ConversionOptions(
             longitude_column=longitude_column,
             latitude_column=latitude_column,
@@ -119,13 +149,10 @@ async def convert_csv_endpoint(
                 archive.write(qgs_path, qgs_name)
             media_type = "application/zip"
 
-        # The generated file is copied into the response before its temporary
-        # directory is removed, so no server path remains after this request.
-        output_content = output_path.read_bytes()
-        _cleanup_directory(temporary_directory)
+        streaming_directory = temporary_directory
         temporary_directory = None
-        return Response(
-            content=output_content,
+        return StreamingResponse(
+            _stream_file_and_cleanup(output_path, streaming_directory),
             media_type=media_type,
             headers={
                 "Content-Disposition": f'attachment; filename="{download_name}"',
