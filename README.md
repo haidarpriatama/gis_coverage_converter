@@ -38,7 +38,6 @@ csv-coverage-grid-converter/
 │       ├── services/
 │       ├── tests/
 │       └── utils/
-├── sample-data/              # CSV siap uji
 ├── docker-compose.yml
 └── README.md
 ```
@@ -116,7 +115,7 @@ Compose hanya menjalankan service `frontend` dan `backend`; tidak ada service da
 
 ## Contoh CSV dan arti kolom
 
-Gunakan file [`sample-data/redcov_banyumanik.csv`](sample-data/redcov_banyumanik.csv), atau CSV seperti berikut:
+Gunakan CSV dengan struktur seperti berikut:
 
 ```csv
 geohash7,latitude_geohash7,longitude_geohash7,avg_rsrp,total_subscriber_count,red_cov_category

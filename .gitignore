@@ -17,6 +17,7 @@ backend/.pytest_cache/
 *.py[cod]
 
 # Generated spatial files and OS metadata
+sample-data/
 *.kml
 *.gpkg
 .DS_Store
