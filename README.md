@@ -1,10 +1,11 @@
 # CSV Coverage Grid Converter
 
-CSV Coverage Grid Converter adalah demo aplikasi web tanpa database untuk mengubah setiap baris koordinat CSV menjadi polygon persegi **153 m × 153 m**. Hasil dapat diunduh sebagai KML untuk Google Earth, GeoPackage (GPKG), atau paket peta QGIS. Upload dan output dibuat di direktori sementara, dikirim sebagai download, lalu dibersihkan setelah response selesai.
+CSV Coverage Grid Converter adalah demo aplikasi web tanpa database untuk mengubah setiap baris koordinat CSV menjadi polygon persegi **153 m × 153 m**. Hasil dapat diunduh sebagai KML untuk Google Earth atau GeoPackage (GPKG) untuk QGIS. Upload dan output dibuat di direktori sementara, dikirim sebagai download, lalu dibersihkan setelah response selesai.
 
 ## Fitur
 
 - Upload CSV hingga 1 GB secara default, dengan delimiter koma atau titik koma.
+- File CSV dapat dipilih dari perangkat atau Google Drive melalui Google Picker.
 - Progress upload ditampilkan di frontend; saat backend memproses file, UI menampilkan tahap proses yang sedang berjalan.
 - Mendukung UTF-8, UTF-8 dengan BOM, dan fallback Windows-1252.
 - Inspeksi header, jumlah baris, serta deteksi otomatis kolom standar.
@@ -13,7 +14,6 @@ CSV Coverage Grid Converter adalah demo aplikasi web tanpa database untuk mengub
 - Polygon persegi dibuat dalam projected CRS berbasis meter, bukan penambahan derajat kasar.
 - KML dengan shared styles, fill opacity 60%, outline, titik pusat, popup HTML, dan `ExtendedData`.
 - GPKG EPSG:4326 dengan layer polygon `coverage_grid`, layer titik merah `coverage_centers`, atribut typed, `style_color`, dan embedded default QGIS style.
-- Paket peta QGIS (`.zip`) berisi GPKG dan project `.qgs` yang membuka Google Satellite otomatis.
 - Tidak memakai database, autentikasi, peta, histori, atau penyimpanan permanen.
 
 ## Stack
@@ -68,6 +68,28 @@ cp .env.example .env.local
 npm run dev
 ```
 
+### Mengaktifkan Google Drive
+
+Integrasi Drive memakai Google Identity Services, Google Picker API, dan scope `drive.file`. Scope ini membatasi akses aplikasi ke file yang dipilih pengguna melalui Picker. Di Google Cloud Console:
+
+1. Buat atau pilih Google Cloud project.
+2. Aktifkan **Google Picker API** dan **Google Drive API**.
+3. Konfigurasikan OAuth consent screen.
+4. Buat OAuth Client ID bertipe **Web application**, lalu tambahkan `http://localhost:3000` ke **Authorized JavaScript origins**.
+5. Buat API key dan batasi penggunaannya ke Google Picker API/Drive API serta origin frontend.
+6. Salin project number sebagai Google App ID.
+
+Isi `frontend/.env.local`:
+
+```env
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=xxxxxxxx.apps.googleusercontent.com
+NEXT_PUBLIC_GOOGLE_API_KEY=xxxxxxxx
+NEXT_PUBLIC_GOOGLE_APP_ID=123456789012
+```
+
+Nilai tersebut memang digunakan oleh aplikasi browser, jadi API key harus dibatasi berdasarkan API dan HTTP referrer di Google Cloud Console. Setelah mengubah env, restart frontend.
+
 Setelah dependency terpasang, frontend dan backend bisa dijalankan bersama dari root project:
 
 ```bash
@@ -120,9 +142,9 @@ CSV boleh memiliki kolom tambahan. Pada demo ini hanya atribut utama di atas yan
 1. Buka frontend dan drop/pilih file `.csv`.
 2. Tunggu inspeksi header dan jumlah baris.
 3. Periksa dropdown longitude, latitude, nama grid, dan kategori. Nama kolom standar otomatis dipilih bila ditemukan.
-4. Pilih KML, GeoPackage, atau QGIS map package.
+4. Pilih KML atau GeoPackage.
 5. Klik **Convert and download**.
-6. Browser langsung mengunduh `<nama_input>_grid.kml`, `<nama_input>_grid.gpkg`, atau `<nama_input>_grid.zip`. Ringkasan menampilkan total, valid, dan skipped rows.
+6. Browser langsung mengunduh `<nama_input>_grid.kml` atau `<nama_input>_grid.gpkg`. Ringkasan menampilkan total, valid, dan skipped rows.
 
 Untuk file besar, frontend menampilkan progress upload aktual dari browser. Setelah upload selesai, progress berubah menjadi tahap proses backend seperti membaca CSV, validasi koordinat, pembuatan grid, dan penulisan output. Persentase detail per baris belum tersedia karena endpoint demo masih mengembalikan file download langsung, bukan job asynchronous dengan endpoint status.
 
@@ -151,7 +173,7 @@ Drag file `.gpkg` ke QGIS atau gunakan **Layer → Add Layer → Add Vector Laye
 
 Keduanya menggunakan EPSG:4326 dan memiliki default categorized style yang disimpan pada tabel style GeoPackage. Jika instalasi QGIS tidak otomatis memakai embedded style, buka **Layer Properties → Symbology → Categorized**, pilih field `red_cov_category`, lalu gunakan warna dari `style_color`.
 
-GeoPackage adalah data vektor dan tidak menyertakan basemap. Untuk membuka langsung dengan basemap, pilih **QGIS map package** saat convert, ekstrak ZIP, lalu buka file `.qgs`. Project itu memuat Google Satellite (`https://mt0.google.com/vt/lyrs=s&x={x}&y={y}&z={z}`) di bawah coverage grid dan center points; koneksi internet tetap diperlukan untuk mengambil tile.
+GeoPackage adalah data vektor dan tidak menyertakan basemap. Basemap atau citra satelit ditambahkan secara terpisah dari QGIS melalui XYZ Tiles/WMS sesuai konfigurasi perangkat pengguna.
 
 Untuk melihat atribut feature di QGIS, aktifkan tool **Identify Features** (ikon `i`), lalu klik polygon grid atau titik pusat. Alternatifnya, klik kanan layer dan pilih **Open Attribute Table**. Klik biasa dengan tool pan/select tidak menampilkan popup seperti Google Earth.
 
@@ -188,7 +210,8 @@ npm run build
 - KML ditulis langsung menggunakan XML standar OGC. Ini disengaja agar export KML tetap bekerja saat build GDAL tidak menyediakan driver `KML`/`LIBKML`.
 - GPKG memerlukan driver `GPKG` pada GDAL yang digunakan Pyogrio. Image Docker memasang GDAL dan dependency terkait.
 - Pemuatan otomatis embedded QGIS style dapat bergantung pada versi dan pengaturan QGIS; field `style_color` tetap tersedia sebagai fallback.
-- Basemap dan citra satelit tidak disimpan dalam GPKG karena output aplikasi hanya berisi feature vektor hasil konversi. Gunakan QGIS map package untuk project yang mereferensikan Google Satellite.
+- Basemap dan citra satelit tidak disimpan dalam GPKG karena output aplikasi hanya berisi feature vektor hasil konversi.
+- File Google Drive diunduh ke memori browser sebelum dikirim ke backend. Untuk CSV ratusan MB, jalur upload perangkat lokal lebih hemat penggunaan memori browser.
 - Semua feature dari satu CSV masih dimuat ke memori selama request setelah upload selesai. Upload disimpan sementara ke disk dan batas default naik menjadi 1 GB, tetapi CSV 700 MB tetap membutuhkan resource server yang besar saat Pandas/GeoPandas membangun output.
 
 ## Troubleshooting GDAL, KML, dan GPKG

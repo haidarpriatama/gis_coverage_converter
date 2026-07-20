@@ -6,7 +6,6 @@ from pydantic import BaseModel, Field
 class OutputFormat(str, Enum):
     KML = "kml"
     GPKG = "gpkg"
-    QGIS = "qgis"
 
 
 class SuggestedColumns(BaseModel):

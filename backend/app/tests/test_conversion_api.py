@@ -1,8 +1,6 @@
 import asyncio
 import sqlite3
 import xml.etree.ElementTree as ET
-import zipfile
-from io import BytesIO
 
 import geopandas as gpd
 import httpx
@@ -116,24 +114,6 @@ def test_api_inspect_convert_metadata_and_non_csv_rejection() -> None:
             assert response.headers["x-valid-rows"] == "1"
             assert response.headers["x-invalid-rows"] == "1"
             assert "coverage_grid.kml" in response.headers["content-disposition"]
-
-            qgis_response = await client.post(
-                "/api/convert",
-                files={"file": ("coverage.csv", csv_bytes, "text/csv")},
-                data={
-                    "longitude_column": "longitude_geohash7",
-                    "latitude_column": "latitude_geohash7",
-                    "name_column": "geohash7",
-                    "category_column": "red_cov_category",
-                    "output_format": "qgis",
-                },
-            )
-            assert qgis_response.status_code == 200
-            assert "coverage_grid.zip" in qgis_response.headers["content-disposition"]
-            with zipfile.ZipFile(BytesIO(qgis_response.content)) as archive:
-                assert archive.namelist() == ["coverage_grid.gpkg", "coverage_grid.qgs"]
-                project = ET.fromstring(archive.read("coverage_grid.qgs"))
-            assert "https://mt0.google.com/vt/lyrs=s" in ET.tostring(project, encoding="unicode")
 
             rejected = await client.post(
                 "/api/csv/inspect",

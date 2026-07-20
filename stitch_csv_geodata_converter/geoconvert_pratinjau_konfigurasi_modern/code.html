@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>GeoConvert | Data Preview &amp; Configuration</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-primary-container": "#7c839b",
+                    "on-primary": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "error-container": "#ffdad6",
+                    "inverse-on-surface": "#eff1f3",
+                    "on-surface-variant": "#45464d",
+                    "outline-variant": "#c6c6cd",
+                    "surface-tint": "#565e74",
+                    "on-tertiary-fixed": "#0d1c2f",
+                    "error": "#ba1a1a",
+                    "surface-container-highest": "#e0e3e5",
+                    "secondary-fixed-dim": "#6bd8cb",
+                    "inverse-primary": "#bec6e0",
+                    "primary-container": "#131b2e",
+                    "outline": "#76777d",
+                    "background": "#f7f9fb",
+                    "on-secondary-fixed": "#00201d",
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary-fixed": "#d5e3fd",
+                    "surface-variant": "#e0e3e5",
+                    "inverse-surface": "#2d3133",
+                    "surface-container-low": "#f2f4f6",
+                    "on-background": "#191c1e",
+                    "primary-fixed-dim": "#bec6e0",
+                    "surface": "#f7f9fb",
+                    "primary": "#000000",
+                    "on-tertiary-fixed-variant": "#3a485c",
+                    "on-secondary": "#ffffff",
+                    "surface-bright": "#f7f9fb",
+                    "on-tertiary": "#ffffff",
+                    "tertiary-container": "#0d1c2f",
+                    "on-primary-fixed-variant": "#3f465c",
+                    "tertiary": "#000000",
+                    "on-tertiary-container": "#76859b",
+                    "secondary-fixed": "#89f5e7",
+                    "secondary-container": "#86f2e4",
+                    "secondary": "#006a61",
+                    "surface-container": "#eceef0",
+                    "on-error": "#ffffff",
+                    "primary-fixed": "#dae2fd",
+                    "surface-container-high": "#e6e8ea",
+                    "tertiary-fixed-dim": "#b9c7e0",
+                    "on-surface": "#191c1e",
+                    "on-secondary-container": "#006f66",
+                    "on-primary-fixed": "#131b2e",
+                    "on-secondary-fixed-variant": "#005049",
+                    "surface-dim": "#d8dadc"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.375rem",
+                    "xl": "0.5rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "sm": "8px",
+                    "container-max": "1440px",
+                    "gutter": "16px",
+                    "md": "16px",
+                    "xs": "4px",
+                    "lg": "24px",
+                    "xl": "48px",
+                    "base": "4px"
+            },
+            "fontFamily": {
+                    "sans": ["Inter", "sans-serif"],
+                    "label-sm": ["Inter"],
+                    "mono-data": ["Inter"],
+                    "label-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "headline-xl": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "label-sm": ["11px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                    "mono-data": ["13px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "label-md": ["13px", {"lineHeight": "18px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "headline-xl": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+        .technical-sans { font-family: 'Inter', sans-serif; letter-spacing: -0.01em; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="bg-background text-on-surface flex flex-col min-h-screen">
+<!-- TopNavBar -->
+<header class="bg-surface-container-lowest border-b border-outline-variant w-full h-16 sticky top-0 z-50">
+<nav class="flex justify-between items-center px-lg w-full max-w-container-max mx-auto h-full">
+<div class="flex items-center gap-md">
+<span class="font-headline-md text-headline-md font-bold text-primary tracking-tight">GeoConvert</span>
+</div>
+<div class="hidden md:flex items-center gap-xl h-full">
+<a class="font-label-md text-label-md text-primary border-b-2 border-primary h-full flex items-center mt-1" href="#">Converter</a>
+<a class="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors h-full flex items-center" href="#">Documentation</a>
+<a class="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors h-full flex items-center" href="#">Help</a>
+</div>
+<button class="bg-primary text-on-primary px-lg py-sm font-label-md text-label-md rounded-lg cursor-pointer hover:opacity-90 active:scale-95 transition-all">
+                Upload File
+            </button>
+</nav>
+</header>
+<!-- Main Content Area -->
+<main class="flex-grow flex flex-col md:flex-row w-full max-w-container-max mx-auto bg-background">
+<!-- Main Stage: Data Preview Table -->
+<section class="flex-grow p-lg overflow-hidden flex flex-col">
+<div class="mb-lg flex justify-between items-center">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface mb-xs tracking-tight">Data Preview</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Reviewing <span class="font-semibold">dataset_2024_sensors.csv</span> (showing first 50 rows)</p>
+</div>
+<div class="flex gap-sm">
+<span class="flex items-center gap-xs px-sm py-xs bg-surface-container-low rounded-lg border border-outline-variant text-label-sm font-label-sm">
+<span class="material-symbols-outlined text-[16px]">file_open</span> 2.4 MB
+                    </span>
+<span class="flex items-center gap-xs px-sm py-xs bg-surface-container-low rounded-lg border border-outline-variant text-label-sm font-label-sm">
+<span class="material-symbols-outlined text-[16px]">table_rows</span> 1,248 rows
+                    </span>
+</div>
+</div>
+<!-- Bento Card for Table -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl flex-grow overflow-hidden flex flex-col shadow-sm">
+<div class="overflow-x-auto custom-scrollbar flex-grow">
+<table class="w-full text-left border-collapse min-w-[800px]">
+<thead>
+<tr class="bg-surface-container-low border-b border-outline-variant">
+<th class="p-md font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">ID</th>
+<th class="p-md font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Timestamp</th>
+<th class="p-md font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Sensor_Lat</th>
+<th class="p-md font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Sensor_Long</th>
+<th class="p-md font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Reading_Value</th>
+<th class="p-md font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Status</th>
+</tr>
+</thead>
+<tbody class="font-mono-data text-mono-data text-on-surface">
+<!-- Sample Data Row 1 -->
+<tr class="border-b border-outline-variant hover:bg-surface-container-low transition-colors">
+<td class="p-md font-medium">#001</td>
+<td class="p-md text-on-surface-variant">2024-05-20T10:30:00Z</td>
+<td class="p-md font-semibold text-primary">34.0522</td>
+<td class="p-md font-semibold text-primary">-118.2437</td>
+<td class="p-md">42.5</td>
+<td class="p-md"><span class="flex items-center gap-xs font-medium"><span class="w-2 h-2 rounded-full bg-secondary"></span>Active</span></td>
+</tr>
+<!-- Sample Data Row 2 -->
+<tr class="border-b border-outline-variant hover:bg-surface-container-low transition-colors">
+<td class="p-md font-medium">#002</td>
+<td class="p-md text-on-surface-variant">2024-05-20T10:31:00Z</td>
+<td class="p-md font-semibold text-primary">34.0528</td>
+<td class="p-md font-semibold text-primary">-118.2440</td>
+<td class="p-md">43.1</td>
+<td class="p-md"><span class="flex items-center gap-xs font-medium"><span class="w-2 h-2 rounded-full bg-secondary"></span>Active</span></td>
+</tr>
+<!-- Sample Data Row 3 -->
+<tr class="border-b border-outline-variant hover:bg-surface-container-low transition-colors">
+<td class="p-md font-medium">#003</td>
+<td class="p-md text-on-surface-variant">2024-05-20T10:32:00Z</td>
+<td class="p-md font-semibold text-primary">34.0535</td>
+<td class="p-md font-semibold text-primary">-118.2452</td>
+<td class="p-md">38.9</td>
+<td class="p-md"><span class="flex items-center gap-xs font-medium"><span class="w-2 h-2 rounded-full bg-error"></span>Offline</span></td>
+</tr>
+<!-- Repeat Rows -->
+<tr class="border-b border-outline-variant hover:bg-surface-container-low transition-colors">
+<td class="p-md font-medium">#004</td>
+<td class="p-md text-on-surface-variant">2024-05-20T10:33:00Z</td>
+<td class="p-md font-semibold text-primary">34.0541</td>
+<td class="p-md font-semibold text-primary">-118.2461</td>
+<td class="p-md">41.2</td>
+<td class="p-md"><span class="flex items-center gap-xs font-medium"><span class="w-2 h-2 rounded-full bg-secondary"></span>Active</span></td>
+</tr>
+<tr class="border-b border-outline-variant hover:bg-surface-container-low transition-colors">
+<td class="p-md font-medium">#005</td>
+<td class="p-md text-on-surface-variant">2024-05-20T10:34:00Z</td>
+<td class="p-md font-semibold text-primary">34.0548</td>
+<td class="p-md font-semibold text-primary">-118.2470</td>
+<td class="p-md">40.8</td>
+<td class="p-md"><span class="flex items-center gap-xs font-medium"><span class="w-2 h-2 rounded-full bg-secondary"></span>Active</span></td>
+</tr>
+<tr class="border-b border-outline-variant hover:bg-surface-container-low transition-colors">
+<td class="p-md font-medium">#006</td>
+<td class="p-md text-on-surface-variant">2024-05-20T10:35:00Z</td>
+<td class="p-md font-semibold text-primary">34.0555</td>
+<td class="p-md font-semibold text-primary">-118.2482</td>
+<td class="p-md">39.4</td>
+<td class="p-md"><span class="flex items-center gap-xs font-medium"><span class="w-2 h-2 rounded-full bg-secondary"></span>Active</span></td>
+</tr>
+<tr class="border-b border-outline-variant hover:bg-surface-container-low transition-colors">
+<td class="p-md font-medium">#007</td>
+<td class="p-md text-on-surface-variant">2024-05-20T10:36:00Z</td>
+<td class="p-md font-semibold text-primary">34.0562</td>
+<td class="p-md font-semibold text-primary">-118.2495</td>
+<td class="p-md">44.0</td>
+<td class="p-md"><span class="flex items-center gap-xs font-medium"><span class="w-2 h-2 rounded-full bg-surface-container-highest"></span>Pending</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination / Footer of table -->
+<div class="p-sm bg-surface-container-low border-t border-outline-variant flex justify-between items-center font-label-md text-label-md text-on-surface-variant">
+<span class="px-md font-medium">Showing 1-10 of 1,248</span>
+<div class="flex gap-xs">
+<button class="p-xs hover:bg-surface-container-highest rounded transition-colors material-symbols-outlined">chevron_left</button>
+<button class="p-xs hover:bg-surface-container-highest rounded transition-colors material-symbols-outlined">chevron_right</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Configuration Sidebar -->
+<aside class="w-full md:w-[360px] bg-white border-l border-outline-variant p-lg flex flex-col gap-lg shadow-[-4px_0_12px_rgba(0,0,0,0.02)]">
+<div class="space-y-sm">
+<h2 class="font-headline-md text-headline-md text-on-surface tracking-tight">Configuration</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Map your source columns to geospatial fields and select output parameters.</p>
+</div>
+<!-- Column Mapping Section -->
+<div class="space-y-md">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary text-[20px]">map</span>
+<h3 class="font-label-md text-label-md uppercase tracking-widest text-on-surface-variant font-semibold">Map Columns</h3>
+</div>
+<div class="space-y-lg">
+<!-- Latitude Mapping -->
+<div class="space-y-xs">
+<label class="font-label-md text-label-md text-on-surface font-semibold">Latitude Column</label>
+<div class="relative">
+<select class="w-full bg-surface-container-low border border-outline-variant rounded-lg p-md font-body-md text-on-surface appearance-none focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all cursor-pointer">
+<option>Select column...</option>
+<option selected="">Sensor_Lat</option>
+<option>Sensor_Long</option>
+<option>Reading_Value</option>
+</select>
+<span class="material-symbols-outlined absolute right-md top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">expand_more</span>
+</div>
+</div>
+<!-- Longitude Mapping -->
+<div class="space-y-xs">
+<label class="font-label-md text-label-md text-on-surface font-semibold">Longitude Column</label>
+<div class="relative">
+<select class="w-full bg-surface-container-low border border-outline-variant rounded-lg p-md font-body-md text-on-surface appearance-none focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all cursor-pointer">
+<option>Select column...</option>
+<option>Sensor_Lat</option>
+<option selected="">Sensor_Long</option>
+<option>Reading_Value</option>
+</select>
+<span class="material-symbols-outlined absolute right-md top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">expand_more</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Output Format Section -->
+<div class="space-y-md">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary text-[20px]">format_list_bulleted</span>
+<h3 class="font-label-md text-label-md uppercase tracking-widest text-on-surface-variant font-semibold">Output Settings</h3>
+</div>
+<div class="grid grid-cols-2 gap-sm">
+<label class="relative cursor-pointer group">
+<input checked="" class="peer sr-only" name="format" type="radio" value="kml"/>
+<div class="flex flex-col items-center justify-center p-md bg-surface-container-low border border-outline-variant rounded-xl peer-checked:border-primary peer-checked:bg-primary/5 transition-all hover:bg-surface-container-high">
+<span class="font-bold text-headline-md text-on-surface">KML</span>
+<span class="text-label-sm font-label-sm text-on-surface-variant font-medium">Keyhole Markup</span>
+</div>
+<span class="absolute top-2 right-2 material-symbols-outlined text-primary opacity-0 peer-checked:opacity-100 transition-opacity" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</label>
+<label class="relative cursor-pointer group">
+<input class="peer sr-only" name="format" type="radio" value="gpkg"/>
+<div class="flex flex-col items-center justify-center p-md bg-surface-container-low border border-outline-variant rounded-xl peer-checked:border-primary peer-checked:bg-primary/5 transition-all hover:bg-surface-container-high">
+<span class="font-bold text-headline-md text-on-surface">GPKG</span>
+<span class="text-label-sm font-label-sm text-on-surface-variant font-medium">GeoPackage</span>
+</div>
+<span class="absolute top-2 right-2 material-symbols-outlined text-primary opacity-0 peer-checked:opacity-100 transition-opacity" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</label>
+</div>
+</div>
+<!-- Advanced Toggle -->
+<button class="flex items-center justify-between w-full p-md bg-surface-container-low rounded-lg border border-outline-variant hover:bg-surface-container-high transition-colors">
+<span class="font-label-md text-label-md text-on-surface font-semibold">Advanced Options</span>
+<span class="material-symbols-outlined text-on-surface-variant">settings</span>
+</button>
+<!-- Final CTA -->
+<div class="mt-auto pt-lg">
+<button class="w-full bg-primary text-on-primary py-lg rounded-xl font-headline-md text-headline-md shadow-lg hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-md" onclick="startConversionAnimation()">
+                    Start Conversion
+                    <span class="material-symbols-outlined" id="btn-icon">rocket_launch</span>
+</button>
+<p class="text-center mt-md text-label-sm font-label-sm text-on-surface-variant font-medium">Estimated processing time: &lt; 5s</p>
+</div>
+</aside>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-low border-t border-outline-variant w-full py-md">
+<div class="flex flex-col md:flex-row justify-between items-center px-lg w-full max-w-container-max mx-auto gap-md md:gap-0">
+<div class="flex items-center gap-md">
+<span class="font-label-md text-label-md font-bold text-on-surface">GeoConvert</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium">© 2024 GeoConvert Technical Systems</span>
+</div>
+<div class="flex gap-lg">
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-opacity duration-200" href="#">Privacy Policy</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-opacity duration-200" href="#">API Docs</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-opacity duration-200" href="#">GitHub</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-opacity duration-200" href="#">Status</a>
+</div>
+</div>
+</footer>
+<!-- Overlay for mini conversion interaction -->
+<div class="fixed inset-0 bg-primary/20 backdrop-blur-sm z-[100] hidden items-center justify-center" id="loading-overlay">
+<div class="bg-white p-xl rounded-2xl shadow-2xl flex flex-col items-center gap-lg max-w-sm w-full mx-md">
+<div class="relative w-24 h-24">
+<svg class="w-full h-full transform -rotate-90">
+<circle class="text-surface-container-highest" cx="48" cy="48" fill="transparent" r="40" stroke="currentColor" stroke-width="8"></circle>
+<circle class="text-primary transition-all duration-300" cx="48" cy="48" fill="transparent" id="progress-circle" r="40" stroke="currentColor" stroke-dasharray="251.2" stroke-dashoffset="251.2" stroke-width="8"></circle>
+</svg>
+<div class="absolute inset-0 flex items-center justify-center font-bold text-headline-md text-primary">
+<span id="progress-text">0</span>%
+                </div>
+</div>
+<div class="text-center">
+<h3 class="font-headline-md text-headline-md text-on-surface tracking-tight">Generating Spatial Data</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Converting CSV rows to geometry...</p>
+</div>
+</div>
+</div>
+<script>
+        function startConversionAnimation() {
+            const overlay = document.getElementById('loading-overlay');
+            const progressCircle = document.getElementById('progress-circle');
+            const progressText = document.getElementById('progress-text');
+            
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+            
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.floor(Math.random() * 15) + 5;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        overlay.innerHTML = `
+                            <div class="bg-white p-xl rounded-2xl shadow-2xl flex flex-col items-center gap-lg max-w-sm w-full mx-md animate-in fade-in zoom-in duration-300">
+                                <span class="material-symbols-outlined text-[64px] text-secondary" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                                <div class="text-center">
+                                    <h3 class="font-headline-md text-headline-md text-on-surface tracking-tight">Conversion Complete</h3>
+                                    <p class="font-body-md text-body-md text-on-surface-variant mb-lg">Your geospatial file is ready for download.</p>
+                                    <button onclick="location.reload()" class="w-full bg-primary text-on-primary py-md rounded-lg font-label-md text-label-md font-semibold">Download File</button>
+                                </div>
+                            </div>
+                        `;
+                    }, 500);
+                }
+                
+                const offset = 251.2 - (251.2 * progress) / 100;
+                progressCircle.style.strokeDashoffset = offset;
+                progressText.innerText = progress;
+            }, 300);
+        }
+
+        // Simple tab/active logic simulation
+        document.querySelectorAll('nav a').forEach(link => {
+            link.addEventListener('click', (e) => {
+                document.querySelectorAll('nav a').forEach(l => {
+                    l.classList.remove('text-primary', 'border-b-2', 'border-primary', 'pb-1');
+                    l.classList.add('text-on-surface-variant');
+                });
+                link.classList.add('text-primary', 'border-b-2', 'border-primary', 'pb-1');
+                link.classList.remove('text-on-surface-variant');
+            });
+        });
+    </script>
+</body></html>

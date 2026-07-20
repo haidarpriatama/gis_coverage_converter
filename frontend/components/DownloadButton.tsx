@@ -1,3 +1,8 @@
+"use client";
+
+import { Download, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
 interface DownloadButtonProps {
   disabled: boolean;
   converting: boolean;
@@ -5,24 +10,26 @@ interface DownloadButtonProps {
 
 export function DownloadButton({ disabled, converting }: DownloadButtonProps) {
   return (
-    <button
+    <Button
       type="submit"
       disabled={disabled}
-      className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-teal-700 px-5 text-sm font-bold text-white shadow-lg shadow-teal-900/10 transition hover:bg-teal-800 focus:outline-none focus:ring-4 focus:ring-teal-500/20 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none sm:w-auto sm:min-w-56"
+      className={`h-11 w-full rounded-md px-5 text-sm font-semibold transition-colors ${
+        disabled
+          ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
+          : "bg-slate-900 text-white hover:bg-slate-800 active:bg-slate-950 cursor-pointer shadow-xs"
+      }`}
     >
       {converting ? (
-        <>
-          <span className="size-4 animate-spin rounded-full border-2 border-white/35 border-t-white" />
-          Building your grids…
-        </>
+        <span className="flex items-center justify-center gap-2">
+          <Loader2 className="size-4 animate-spin text-white" />
+          Memproses & Membuat Grid...
+        </span>
       ) : (
-        <>
-          Convert and download
-          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" className="size-5" aria-hidden="true">
-            <path d="M10 3v10m0 0 4-4m-4 4L6 9M4 16h12" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </>
+        <span className="flex items-center justify-center gap-2">
+          Konversi & Unduh File Coverage Grid
+          <Download className="size-4" />
+        </span>
       )}
-    </button>
+    </Button>
   );
 }
