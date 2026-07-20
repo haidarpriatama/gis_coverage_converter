@@ -1,9 +1,6 @@
 import type { NextConfig } from "next";
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-if (process.env.VERCEL && !apiBaseUrl) {
-  throw new Error("NEXT_PUBLIC_API_BASE_URL must be configured for Vercel deployments.");
-}
 
 function apiOrigin(): string | null {
   if (!apiBaseUrl) return null;

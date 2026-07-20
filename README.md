@@ -94,7 +94,7 @@ Nilai tersebut memang digunakan oleh aplikasi browser, jadi API key harus dibata
 Setelah dependency terpasang, frontend dan backend bisa dijalankan bersama dari root project:
 
 ```bash
-cd /home/haidar/website/csv-coverage-grid-converter
+cd csv-coverage-grid-converter
 npm run dev
 ```
 
@@ -113,12 +113,6 @@ docker compose up --build
 ```
 
 Compose hanya menjalankan service `frontend` dan `backend`; tidak ada service database. Hentikan dengan `Ctrl+C`, lalu jalankan `docker compose down` bila diperlukan.
-
-## Deployment production
-
-Frontend disiapkan untuk Vercel dengan root directory `frontend`. Backend geospasial tetap dijalankan sebagai container terpisah karena Vercel Functions membatasi payload request/response biasa hingga 4,5 MB, sedangkan aplikasi menerima CSV sampai 1 GB. Browser mengunggah langsung ke URL backend melalui `NEXT_PUBLIC_API_BASE_URL`.
-
-Instruksi environment, deployment Docker, konfigurasi Google Cloud, CORS, security checklist, serta pengujian URL production tersedia di [`DEPLOYMENT.md`](DEPLOYMENT.md).
 
 ## Contoh CSV dan arti kolom
 
