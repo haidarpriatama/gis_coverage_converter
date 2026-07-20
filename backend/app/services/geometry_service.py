@@ -1,3 +1,4 @@
+import math
 from dataclasses import dataclass
 
 import geopandas as gpd
@@ -19,6 +20,7 @@ class GridBuildResult:
     total_rows: int
     valid_rows: int
     invalid_rows: int
+    duplicate_rows: int
     projected_crs: str
 
 
@@ -68,13 +70,13 @@ def build_grid_features(
     valid_mask = longitude.between(-180, 180) & latitude.between(-90, 90)
     valid_mask &= longitude.notna() & latitude.notna()
     total_rows = len(dataframe)
-    valid_rows = int(valid_mask.sum())
-    if valid_rows == 0:
+    coordinate_valid_rows = int(valid_mask.sum())
+    if coordinate_valid_rows == 0:
         raise CsvValidationError("Conversion failed because no valid coordinate rows were found.")
 
-    valid = dataframe.loc[valid_mask].copy()
-    valid_longitude = longitude.loc[valid_mask].astype(float)
-    valid_latitude = latitude.loc[valid_mask].astype(float)
+    valid = dataframe.loc[valid_mask].copy().reset_index(drop=True)
+    valid_longitude = longitude.loc[valid_mask].astype(float).reset_index(drop=True)
+    valid_latitude = latitude.loc[valid_mask].astype(float).reset_index(drop=True)
 
     center_longitude = float(valid_longitude.median())
     center_latitude = float(valid_latitude.median())
@@ -82,19 +84,36 @@ def build_grid_features(
     to_projected = Transformer.from_crs("EPSG:4326", projected_crs, always_xy=True)
     to_geographic = Transformer.from_crs(projected_crs, "EPSG:4326", always_xy=True)
 
-    half_width = options.grid_width_m / 2
-    half_height = options.grid_height_m / 2
-    projected_polygons = []
-    for lon, lat in zip(valid_longitude, valid_latitude, strict=True):
-        center_x, center_y = to_projected.transform(lon, lat)
-        projected_polygons.append(
-            box(
-                center_x - half_width,
-                center_y - half_height,
-                center_x + half_width,
-                center_y + half_height,
-            )
+    projected_points = [
+        to_projected.transform(lon, lat)
+        for lon, lat in zip(valid_longitude, valid_latitude, strict=True)
+    ]
+    cell_keys = [
+        (
+            math.floor(point_x / options.grid_width_m),
+            math.floor(point_y / options.grid_height_m),
         )
+        for point_x, point_y in projected_points
+    ]
+    unique_cell_mask = ~pd.Series(cell_keys, dtype="object").duplicated(keep="first")
+    duplicate_rows = int((~unique_cell_mask).sum())
+
+    valid = valid.loc[unique_cell_mask].reset_index(drop=True)
+    valid_longitude = valid_longitude.loc[unique_cell_mask].reset_index(drop=True)
+    valid_latitude = valid_latitude.loc[unique_cell_mask].reset_index(drop=True)
+    unique_cell_keys = [
+        cell_key for cell_key, keep in zip(cell_keys, unique_cell_mask, strict=True) if keep
+    ]
+    projected_polygons = [
+        box(
+            column * options.grid_width_m,
+            row * options.grid_height_m,
+            (column + 1) * options.grid_width_m,
+            (row + 1) * options.grid_height_m,
+        )
+        for column, row in unique_cell_keys
+    ]
+    valid_rows = len(valid)
 
     name_values = _optional_series(valid, options.name_column).reset_index(drop=True)
     category_values = _optional_series(valid, options.category_column).reset_index(drop=True)
@@ -129,5 +148,6 @@ def build_grid_features(
         total_rows=total_rows,
         valid_rows=valid_rows,
         invalid_rows=total_rows - valid_rows,
+        duplicate_rows=duplicate_rows,
         projected_crs=projected_crs.to_string(),
     )

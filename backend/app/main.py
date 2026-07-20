@@ -23,6 +23,7 @@ app.add_middleware(
         "X-Total-Rows",
         "X-Valid-Rows",
         "X-Invalid-Rows",
+        "X-Duplicate-Rows",
     ],
 )
 app.include_router(router)

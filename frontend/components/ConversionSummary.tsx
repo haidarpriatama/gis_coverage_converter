@@ -12,13 +12,13 @@ export function ConversionSummary({ summary }: { summary: ConversionSummaryData 
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="text-xs font-semibold text-emerald-900">
-            Konversi Berhasil Dituntaskan!
+            Konversi selesai
           </h3>
           <p className="mt-0.5 truncate text-xs text-emerald-700 font-mono">
             {summary.filename}
           </p>
 
-          <div className="mt-3 grid grid-cols-3 gap-2">
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
             <div className="rounded-md border border-slate-200 bg-white p-2 text-center">
               <p className="text-sm font-bold text-slate-900 font-mono">{summary.totalRows.toLocaleString()}</p>
               <p className="text-[10px] uppercase text-slate-500 font-medium">Total Baris</p>
@@ -34,6 +34,13 @@ export function ConversionSummary({ summary }: { summary: ConversionSummaryData 
                 {summary.invalidRows.toLocaleString()}
               </p>
               <p className="text-[10px] uppercase text-slate-500 font-medium">Dilewati</p>
+            </div>
+
+            <div className="rounded-md border border-slate-200 bg-white p-2 text-center">
+              <p className={`text-sm font-bold font-mono ${summary.duplicateRows > 0 ? "text-amber-600" : "text-slate-500"}`}>
+                {summary.duplicateRows.toLocaleString()}
+              </p>
+              <p className="text-[10px] uppercase text-slate-500 font-medium">Duplikat Sel</p>
             </div>
           </div>
         </div>

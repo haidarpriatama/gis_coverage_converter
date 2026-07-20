@@ -1,6 +1,6 @@
 # CSV Coverage Grid Converter
 
-CSV Coverage Grid Converter adalah demo aplikasi web tanpa database untuk mengubah setiap baris koordinat CSV menjadi polygon persegi **153 m × 153 m**. Hasil dapat diunduh sebagai KML untuk Google Earth atau GeoPackage (GPKG) untuk QGIS. Upload dan output dibuat di direktori sementara, dikirim sebagai download, lalu dibersihkan setelah response selesai.
+CSV Coverage Grid Converter adalah demo aplikasi web tanpa database untuk menempatkan setiap koordinat CSV ke polygon persegi **153 m × 153 m** pada lattice UTM yang sejajar. Hasil dapat diunduh sebagai KML untuk Google Earth atau GeoPackage (GPKG) untuk QGIS. Upload dan output dibuat di direktori sementara, dikirim sebagai download, lalu dibersihkan setelah response selesai.
 
 ## Fitur
 
@@ -11,9 +11,10 @@ CSV Coverage Grid Converter adalah demo aplikasi web tanpa database untuk mengub
 - Inspeksi header, jumlah baris, serta deteksi otomatis kolom standar.
 - Pemetaan kolom longitude, latitude, nama grid, dan kategori.
 - Validasi numerik dan rentang koordinat; baris tidak valid dilewati dan dihitung.
-- Polygon persegi dibuat dalam projected CRS berbasis meter, bukan penambahan derajat kasar.
-- KML dengan shared styles, fill opacity 60%, outline, titik pusat, popup HTML, dan `ExtendedData`.
-- GPKG EPSG:4326 dengan layer polygon `coverage_grid`, layer titik merah `coverage_centers`, atribut typed, `style_color`, dan embedded default QGIS style.
+- Polygon persegi dibuat dalam projected CRS berbasis meter dan di-snap ke lattice UTM, bukan penambahan derajat kasar.
+- Sel grid sejajar dan tidak saling menimpa; jika beberapa baris masuk ke sel yang sama, baris pertama dipertahankan.
+- KML dengan shared styles, fill opacity 60%, outline, titik koordinat sumber, popup HTML, dan `ExtendedData`.
+- GPKG EPSG:4326 dengan layer polygon `coverage_grid`, layer titik merah `coverage_points`, atribut typed, `style_color`, dan embedded default QGIS style.
 - Tidak memakai database, autentikasi, peta, histori, atau penyimpanan permanen.
 
 ## Stack
@@ -128,8 +129,8 @@ Kolom output utama:
 | Kolom | Isi | Tipe output yang diupayakan |
 | --- | --- | --- |
 | `geohash7` | ID/nama polygon | text |
-| `latitude_geohash7` | latitude pusat EPSG:4326 | float |
-| `longitude_geohash7` | longitude pusat EPSG:4326 | float |
+| `latitude_geohash7` | latitude titik sumber EPSG:4326 | float |
+| `longitude_geohash7` | longitude titik sumber EPSG:4326 | float |
 | `avg_rsrp` | rata-rata RSRP | float |
 | `total_subscriber_count` | jumlah subscriber | integer jika seluruh nilai valid integer |
 | `red_cov_category` | kategori coverage | text |
@@ -144,17 +145,17 @@ CSV boleh memiliki kolom tambahan. Pada demo ini hanya atribut utama di atas yan
 3. Periksa dropdown longitude, latitude, nama grid, dan kategori. Nama kolom standar otomatis dipilih bila ditemukan.
 4. Pilih KML atau GeoPackage.
 5. Klik **Convert and download**.
-6. Browser langsung mengunduh `<nama_input>_grid.kml` atau `<nama_input>_grid.gpkg`. Ringkasan menampilkan total, valid, dan skipped rows.
+6. Browser langsung mengunduh `<nama_input>_grid.kml` atau `<nama_input>_grid.gpkg`. Ringkasan menampilkan total, valid, skipped rows, dan jumlah duplikat sel.
 
 Untuk file besar, frontend menampilkan progress upload aktual dari browser. Setelah upload selesai, progress berubah menjadi tahap proses backend seperti membaca CSV, validasi koordinat, pembuatan grid, dan penulisan output. Persentase detail per baris belum tersedia karena endpoint demo masih mengembalikan file download langsung, bukan job asynchronous dengan endpoint status.
 
-Secara internal backend mengambil median koordinat valid untuk menentukan zona UTM dan hemisfer. Titik EPSG:4326 ditransformasikan ke UTM, dibuat kotak Shapely dengan setengah sisi 76,5 meter, kemudian ditransformasikan kembali ke EPSG:4326. Satu CRS dipakai per file agar seluruh feature konsisten.
+Secara internal backend mengambil median koordinat valid untuk menentukan zona UTM dan hemisfer. Setiap titik EPSG:4326 ditransformasikan ke UTM lalu dimasukkan ke sel lattice 153 m menggunakan indeks `floor(x / 153)` dan `floor(y / 153)`. Batas polygon dibentuk dengan Shapely `box()` pada kelipatan tepat 153 meter, kemudian ditransformasikan kembali ke EPSG:4326. Karena semua polygon memakai lattice yang sama, sel hanya dapat berbagi sisi atau sudut dan tidak menimpa area satu sama lain. Titik CSV tetap disimpan pada koordinat aslinya dan tidak harus berada tepat di tengah sel. Jika lebih dari satu baris jatuh pada sel yang sama, hanya baris pertama yang diekspor dan baris berikutnya dihitung sebagai duplikat sel/dilewati.
 
 ## Membuka output
 
 ### Google Earth
 
-Di Google Earth Pro gunakan **File → Open**, pilih file `.kml`, lalu klik polygon. Popup menampilkan geohash, average RSRP, subscriber count, kategori, serta koordinat pusat. Warna awal:
+Di Google Earth Pro gunakan **File → Open**, pilih file `.kml`, lalu klik polygon. Popup menampilkan geohash, average RSRP, subscriber count, kategori, serta koordinat sumber. Warna awal:
 
 - `RED ENGINEERING`: merah.
 - `RED OPTIM`: kuning.
@@ -162,20 +163,20 @@ Di Google Earth Pro gunakan **File → Open**, pilih file `.kml`, lalu klik poly
 - `NOT RED COV`: biru.
 - kategori lain: abu-abu.
 
-Setiap placemark KML berisi polygon berwarna kategori dan marker titik merah tepat pada longitude-latitude pusat grid.
+Setiap placemark KML berisi polygon berwarna kategori dan marker titik merah pada longitude-latitude sumber. Marker tidak harus berada tepat di pusat sel hasil snapping.
 
 ### QGIS
 
 Drag file `.gpkg` ke QGIS atau gunakan **Layer → Add Layer → Add Vector Layer**, lalu tambahkan kedua layer berikut:
 
 - `coverage_grid`: polygon 153 m × 153 m.
-- `coverage_centers`: titik longitude-latitude pusat polygon, memakai satu warna merah untuk semua kategori. Marker memakai ukuran pixel agar tidak ikut membesar/mengecil terhadap skala peta saat zoom.
+- `coverage_points`: titik longitude-latitude sumber, memakai satu warna merah untuk semua kategori. Marker memakai ukuran pixel agar tidak ikut membesar/mengecil terhadap skala peta saat zoom.
 
 Keduanya menggunakan EPSG:4326 dan memiliki default categorized style yang disimpan pada tabel style GeoPackage. Jika instalasi QGIS tidak otomatis memakai embedded style, buka **Layer Properties → Symbology → Categorized**, pilih field `red_cov_category`, lalu gunakan warna dari `style_color`.
 
 GeoPackage adalah data vektor dan tidak menyertakan basemap. Basemap atau citra satelit ditambahkan secara terpisah dari QGIS melalui XYZ Tiles/WMS sesuai konfigurasi perangkat pengguna.
 
-Untuk melihat atribut feature di QGIS, aktifkan tool **Identify Features** (ikon `i`), lalu klik polygon grid atau titik pusat. Alternatifnya, klik kanan layer dan pilih **Open Attribute Table**. Klik biasa dengan tool pan/select tidak menampilkan popup seperti Google Earth.
+Untuk melihat atribut feature di QGIS, aktifkan tool **Identify Features** (ikon `i`), lalu klik polygon grid atau titik sumber. Alternatifnya, klik kanan layer dan pilih **Open Attribute Table**. Klik biasa dengan tool pan/select tidak menampilkan popup seperti Google Earth.
 
 ## Endpoint API
 
@@ -183,7 +184,7 @@ Untuk melihat atribut feature di QGIS, aktifkan tool **Identify Features** (ikon
 - `POST /api/csv/inspect` — multipart field `file`; mengembalikan header, jumlah row, dan suggested columns.
 - `POST /api/convert` — multipart fields `file`, `longitude_column`, `latitude_column`, `name_column`, `category_column`, `output_format`, `grid_width_m`, `grid_height_m`, dan `fill_opacity`.
 
-Response konversi menyertakan `Content-Disposition`, `X-Total-Rows`, `X-Valid-Rows`, dan `X-Invalid-Rows`. CORS mengekspos header tersebut ke frontend.
+Response konversi menyertakan `Content-Disposition`, `X-Total-Rows`, `X-Valid-Rows`, `X-Invalid-Rows`, dan `X-Duplicate-Rows`. CORS mengekspos header tersebut ke frontend.
 
 ## Testing
 
@@ -193,7 +194,7 @@ source .venv/bin/activate
 PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q
 ```
 
-`PYTEST_DISABLE_PLUGIN_AUTOLOAD=1` menjaga test tetap terisolasi dari plugin Pytest global (misalnya plugin ROS yang mungkin ada pada workstation). Test mencakup parsing BOM/delimiter, validasi file dan koordinat, pembuangan baris invalid, ukuran serta pusat polygon, preservasi atribut, jumlah feature, XML KML, layer GPKG, metadata response, dan penolakan file non-CSV.
+`PYTEST_DISABLE_PLUGIN_AUTOLOAD=1` menjaga test tetap terisolasi dari plugin Pytest global (misalnya plugin ROS yang mungkin ada pada workstation). Test mencakup parsing BOM/delimiter, validasi file dan koordinat, pembuangan baris invalid, dimensi dan alignment polygon, titik sumber berada di dalam sel, pencegahan overlap/duplikat sel, preservasi atribut, jumlah feature, XML KML, layer GPKG, metadata response, dan penolakan file non-CSV.
 
 Untuk memeriksa frontend:
 

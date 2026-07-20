@@ -210,7 +210,7 @@ export function ConversionForm() {
         onProcessingStart: () => {
           setProgress({
             label: "Mengonversi CSV ke Polygon Grid",
-            detail: "Memvalidasi koordinat WGS84, proyeksi UTM, dan menulis file hasil",
+            detail: "Memvalidasi koordinat, menyelaraskan sel UTM 153 m, dan menulis file hasil",
             percent: null,
           });
         },
@@ -265,7 +265,7 @@ export function ConversionForm() {
                     </div>
                   </div>
 
-                  <div className="mt-3 flex items-center justify-between gap-2">
+                  <div className="mt-3 grid grid-cols-2 gap-2">
                     <CsvTablePreviewModal file={file} columns={inspection.columns} />
                     <CsvUploader compact file={file} busy={busy} onFile={handleFile} />
                   </div>
@@ -397,7 +397,7 @@ export function ConversionForm() {
                 {/* Subtle Inline Grid Specs */}
                 <p className="mt-3 text-[11px] text-slate-500 flex items-center gap-1.5 font-mono">
                   <Globe className="size-3 text-slate-400 shrink-0" />
-                  <span>Detail grid: 153m × 153m · Fill 60% · Proyeksi UTM Otomatis</span>
+                  <span>Grid 153m × 153m · Snap UTM sejajar · Tanpa overlap area</span>
                 </p>
               </fieldset>
             </div>

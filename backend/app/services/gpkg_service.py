@@ -216,19 +216,19 @@ def write_gpkg(geodataframe: gpd.GeoDataFrame, output_path: Path) -> None:
         index=False,
     )
 
-    center_attributes = polygons.drop(columns="geometry").copy()
-    centers = gpd.GeoDataFrame(
-        center_attributes,
+    point_attributes = polygons.drop(columns="geometry").copy()
+    source_points = gpd.GeoDataFrame(
+        point_attributes,
         geometry=gpd.points_from_xy(
-            center_attributes["longitude_geohash7"],
-            center_attributes["latitude_geohash7"],
+            point_attributes["longitude_geohash7"],
+            point_attributes["latitude_geohash7"],
             crs="EPSG:4326",
         ),
         crs="EPSG:4326",
     )
-    centers.to_file(
+    source_points.to_file(
         output_path,
-        layer="coverage_centers",
+        layer="coverage_points",
         driver="GPKG",
         engine="pyogrio",
         index=False,
@@ -243,7 +243,7 @@ def write_gpkg(geodataframe: gpd.GeoDataFrame, output_path: Path) -> None:
     )
     _store_qgis_style(
         output_path,
-        "coverage_centers",
+        "coverage_points",
         "geom",
-        _qgis_style(centers, "marker"),
+        _qgis_style(source_points, "marker"),
     )

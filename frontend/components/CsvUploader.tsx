@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { UploadCloud, CheckCircle2, RefreshCw } from "lucide-react";
+import { UploadCloud, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface CsvUploaderProps {
@@ -37,10 +37,10 @@ export function CsvUploader({ file, busy, compact = false, onFile }: CsvUploader
           variant="outline"
           disabled={busy}
           onClick={() => inputRef.current?.click()}
-          className="h-8 px-3 text-xs font-medium rounded-md bg-white border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-1.5"
+          className="h-9 w-full rounded-md border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 hover:bg-slate-50"
         >
-          <RefreshCw className="size-3 text-slate-500" />
-          Ganti File
+          <UploadCloud className="size-3.5 text-slate-500" />
+          Upload file lain
         </Button>
       ) : (
         <div

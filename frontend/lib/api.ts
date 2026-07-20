@@ -35,12 +35,14 @@ export async function convertCsv(
   const totalRows = Number(response.headers["x-total-rows"] ?? 0);
   const validRows = Number(response.headers["x-valid-rows"] ?? 0);
   const invalidRows = Number(response.headers["x-invalid-rows"] ?? 0);
+  const duplicateRows = Number(response.headers["x-duplicate-rows"] ?? 0);
   return {
     blob: response.blob,
     summary: {
       totalRows,
       validRows,
       invalidRows,
+      duplicateRows,
       filename: downloadFilenameFromHeader(response.headers["content-disposition"] ?? ""),
     },
   };

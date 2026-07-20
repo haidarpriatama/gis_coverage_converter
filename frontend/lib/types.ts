@@ -27,6 +27,7 @@ export interface ConversionSummaryData {
   totalRows: number;
   validRows: number;
   invalidRows: number;
+  duplicateRows: number;
   filename: string;
 }
 

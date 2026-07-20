@@ -29,8 +29,8 @@ def _description(row: pd.Series) -> str:
         ("Average RSRP", _display(row.get("avg_rsrp"), " dBm")),
         ("Total Subscriber Count", _display(row.get("total_subscriber_count"))),
         ("Category", _display(row.get("red_cov_category"))),
-        ("Center Latitude", _display(row.get("latitude_geohash7"))),
-        ("Center Longitude", _display(row.get("longitude_geohash7"))),
+        ("Source Latitude", _display(row.get("latitude_geohash7"))),
+        ("Source Longitude", _display(row.get("longitude_geohash7"))),
     )
     rows = "".join(
         f"<tr><th style='text-align:left;padding:4px 12px 4px 0'>{html.escape(label)}</th>"
@@ -122,10 +122,10 @@ def write_kml(geodataframe: gpd.GeoDataFrame, output_path: Path, fill_opacity: f
         ET.SubElement(linear_ring, _tag("coordinates")).text = coordinates
 
         point = ET.SubElement(multi_geometry, _tag("Point"))
-        center_longitude = float(row["longitude_geohash7"])
-        center_latitude = float(row["latitude_geohash7"])
+        source_longitude = float(row["longitude_geohash7"])
+        source_latitude = float(row["latitude_geohash7"])
         ET.SubElement(point, _tag("coordinates")).text = (
-            f"{center_longitude:.10f},{center_latitude:.10f},0"
+            f"{source_longitude:.10f},{source_latitude:.10f},0"
         )
 
     tree = ET.ElementTree(root)

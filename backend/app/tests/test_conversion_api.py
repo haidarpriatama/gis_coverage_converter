@@ -55,13 +55,13 @@ def test_kml_and_gpkg_outputs(
     assert first_center.text == "110.4340000000,-7.0456700000,0"
 
     gpkg = gpd.read_file(gpkg_path, layer="coverage_grid", engine="pyogrio")
-    centers = gpd.read_file(gpkg_path, layer="coverage_centers", engine="pyogrio")
+    source_points = gpd.read_file(gpkg_path, layer="coverage_points", engine="pyogrio")
     assert len(gpkg) == result.valid_rows
-    assert len(centers) == result.valid_rows
+    assert len(source_points) == result.valid_rows
     assert gpkg.geometry.geom_type.eq("Polygon").all()
-    assert centers.geometry.geom_type.eq("Point").all()
-    assert centers.geometry.x.iloc[0] == 110.434
-    assert centers.geometry.y.iloc[0] == -7.04567
+    assert source_points.geometry.geom_type.eq("Point").all()
+    assert source_points.geometry.x.iloc[0] == 110.434
+    assert source_points.geometry.y.iloc[0] == -7.04567
     assert {
         "avg_rsrp",
         "total_subscriber_count",
@@ -72,12 +72,12 @@ def test_kml_and_gpkg_outputs(
         stored_styles = connection.execute(
             "SELECT f_table_name, useAsDefault, styleQML FROM layer_styles ORDER BY f_table_name"
         ).fetchall()
-    assert [row[0] for row in stored_styles] == ["coverage_centers", "coverage_grid"]
+    assert [row[0] for row in stored_styles] == ["coverage_grid", "coverage_points"]
     assert all(row[1] == 1 for row in stored_styles)
-    assert "singleSymbol" in stored_styles[0][2]
-    assert "255,0,0,255" in stored_styles[0][2]
-    assert 'name="size_unit" type="QString" value="Pixel"' in stored_styles[0][2]
-    assert "categorizedSymbol" in stored_styles[1][2]
+    assert "categorizedSymbol" in stored_styles[0][2]
+    assert "singleSymbol" in stored_styles[1][2]
+    assert "255,0,0,255" in stored_styles[1][2]
+    assert 'name="size_unit" type="QString" value="Pixel"' in stored_styles[1][2]
 
 
 def test_api_inspect_convert_metadata_and_non_csv_rejection() -> None:
@@ -113,6 +113,7 @@ def test_api_inspect_convert_metadata_and_non_csv_rejection() -> None:
             assert response.headers["x-total-rows"] == "2"
             assert response.headers["x-valid-rows"] == "1"
             assert response.headers["x-invalid-rows"] == "1"
+            assert response.headers["x-duplicate-rows"] == "0"
             assert "coverage_grid.kml" in response.headers["content-disposition"]
 
             rejected = await client.post(

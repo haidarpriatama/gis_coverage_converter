@@ -146,6 +146,7 @@ async def convert_csv_endpoint(
                 "X-Total-Rows": str(result.total_rows),
                 "X-Valid-Rows": str(result.valid_rows),
                 "X-Invalid-Rows": str(result.invalid_rows),
+                "X-Duplicate-Rows": str(result.duplicate_rows),
             },
         )
     except (CsvValidationError, ValidationError) as exc:
