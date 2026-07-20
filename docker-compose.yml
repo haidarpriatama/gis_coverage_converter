@@ -3,7 +3,8 @@ services:
     build:
       context: ./backend
     environment:
-      FRONTEND_ORIGIN: http://localhost:3000
+      ENVIRONMENT: development
+      FRONTEND_ORIGINS: http://localhost:3000
       MAX_UPLOAD_SIZE_MB: "1024"
     ports:
       - "8000:8000"

@@ -111,7 +111,7 @@ def test_all_invalid_coordinates_fail(conversion_options) -> None:
         ("NOT RED COV", "#0000FF"),
         ("RED ENGINEERING", "#FF0000"),
         ("RED OPTIM", "#FFFF00"),
-        ("UNKNOWN", "#808080"),
+        ("UNKNOWN", "#FF69B4"),
     ],
 )
 def test_category_colors(category: str, expected: str) -> None:

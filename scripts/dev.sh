@@ -13,7 +13,7 @@ if [ ! -x "$BACKEND_DIR/.venv/bin/python" ]; then
   echo "  cd backend"
   echo "  python -m venv .venv"
   echo "  source .venv/bin/activate"
-  echo "  pip install -r requirements.txt"
+  echo "  pip install -r requirements-dev.txt"
   exit 1
 fi
 

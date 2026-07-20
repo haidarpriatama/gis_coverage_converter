@@ -72,7 +72,7 @@ def write_kml(geodataframe: gpd.GeoDataFrame, output_path: Path, fill_opacity: f
         ET.SubElement(icon_style, _tag("color")).text = hex_to_kml_color(
             CENTER_POINT_COLOR, 1.0
         )
-        ET.SubElement(icon_style, _tag("scale")).text = "0.8"
+        ET.SubElement(icon_style, _tag("scale")).text = "0.35"
         icon = ET.SubElement(icon_style, _tag("Icon"))
         ET.SubElement(icon, _tag("href")).text = (
             "http://maps.google.com/mapfiles/kml/shapes/shaded_dot.png"

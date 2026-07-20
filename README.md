@@ -55,7 +55,7 @@ Backend:
 cd backend
 python -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 cp .env.example .env
 uvicorn app.main:app --reload
 ```
@@ -113,6 +113,12 @@ docker compose up --build
 ```
 
 Compose hanya menjalankan service `frontend` dan `backend`; tidak ada service database. Hentikan dengan `Ctrl+C`, lalu jalankan `docker compose down` bila diperlukan.
+
+## Deployment production
+
+Frontend disiapkan untuk Vercel dengan root directory `frontend`. Backend geospasial tetap dijalankan sebagai container terpisah karena Vercel Functions membatasi payload request/response biasa hingga 4,5 MB, sedangkan aplikasi menerima CSV sampai 1 GB. Browser mengunggah langsung ke URL backend melalui `NEXT_PUBLIC_API_BASE_URL`.
+
+Instruksi environment, deployment Docker, konfigurasi Google Cloud, CORS, security checklist, serta pengujian URL production tersedia di [`DEPLOYMENT.md`](DEPLOYMENT.md).
 
 ## Contoh CSV dan arti kolom
 
@@ -192,6 +198,7 @@ Response konversi menyertakan `Content-Disposition`, `X-Total-Rows`, `X-Valid-Ro
 cd backend
 source .venv/bin/activate
 PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q
+pip-audit -r requirements.txt --progress-spinner off
 ```
 
 `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1` menjaga test tetap terisolasi dari plugin Pytest global (misalnya plugin ROS yang mungkin ada pada workstation). Test mencakup parsing BOM/delimiter, validasi file dan koordinat, pembuangan baris invalid, dimensi dan alignment polygon, titik sumber berada di dalam sel, pencegahan overlap/duplikat sel, preservasi atribut, jumlah feature, XML KML, layer GPKG, metadata response, dan penolakan file non-CSV.
@@ -202,6 +209,7 @@ Untuk memeriksa frontend:
 cd frontend
 npm run lint
 npm run build
+npm audit --omit=dev
 ```
 
 ## Known limitations
@@ -233,4 +241,3 @@ python -c "import xml.etree.ElementTree as ET; ET.parse('output_grid.kml'); prin
 ```
 
 Pastikan juga koordinat CSV menggunakan urutan longitude/latitude yang benar dan CRS EPSG:4326.
-# gis_coverage_converter

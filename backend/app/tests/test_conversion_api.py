@@ -124,3 +124,48 @@ def test_api_inspect_convert_metadata_and_non_csv_rejection() -> None:
             assert "Only .csv" in rejected.json()["detail"]
 
     asyncio.run(exercise_api())
+
+
+def test_security_headers_cors_and_early_body_limit(monkeypatch) -> None:
+    monkeypatch.setenv("MAX_UPLOAD_SIZE_MB", "1")
+
+    async def exercise_security_controls() -> None:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            health = await client.get("/api/health")
+            assert health.status_code == 200
+            assert health.headers["x-content-type-options"] == "nosniff"
+            assert health.headers["x-frame-options"] == "DENY"
+            assert health.headers["cache-control"] == "no-store"
+
+            allowed_preflight = await client.options(
+                "/api/convert",
+                headers={
+                    "Origin": "http://localhost:3000",
+                    "Access-Control-Request-Method": "POST",
+                    "Access-Control-Request-Headers": "content-type",
+                },
+            )
+            assert allowed_preflight.status_code == 200
+            assert allowed_preflight.headers["access-control-allow-origin"] == (
+                "http://localhost:3000"
+            )
+
+            denied_preflight = await client.options(
+                "/api/convert",
+                headers={
+                    "Origin": "https://attacker.example",
+                    "Access-Control-Request-Method": "POST",
+                },
+            )
+            assert "access-control-allow-origin" not in denied_preflight.headers
+
+            oversized = await client.post(
+                "/api/csv/inspect",
+                content=b"",
+                headers={"Content-Length": str(4 * 1024 * 1024)},
+            )
+            assert oversized.status_code == 413
+            assert "configured upload limit" in oversized.json()["detail"]
+
+    asyncio.run(exercise_security_controls())

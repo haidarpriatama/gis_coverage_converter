@@ -2,9 +2,12 @@
   "name": "csv-coverage-grid-converter-frontend",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint ."
   },
@@ -26,5 +29,8 @@
     "eslint-config-next": "^16.0.0",
     "tailwindcss": "^4.1.16",
     "typescript": "^5.9.3"
+  },
+  "overrides": {
+    "postcss": "^8.5.14"
   }
 }

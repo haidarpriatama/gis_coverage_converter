@@ -282,7 +282,7 @@ export function ConversionForm() {
               <div className="space-y-3">
                 <CsvUploader file={file} busy={busy} onFile={handleFile} />
 
-                <div className="flex items-center gap-3 text-[11px] text-slate-400 font-medium">
+                <div className="flex items-center gap-3 text-[11px] text-slate-500 font-medium">
                   <span className="h-px flex-1 bg-slate-200" />
                   ATAU
                   <span className="h-px flex-1 bg-slate-200" />

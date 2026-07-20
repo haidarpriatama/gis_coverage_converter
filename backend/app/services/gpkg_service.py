@@ -43,7 +43,7 @@ def _symbol_layer(symbol: ET.Element, geometry_type: str, hex_color: str) -> Non
             "outline_width": "1",
             "outline_width_unit": "Pixel",
             "scale_method": "diameter",
-            "size": "8",
+            "size": "4",
             "size_unit": "Pixel",
         }
 
@@ -149,7 +149,7 @@ def _qgis_style(data: gpd.GeoDataFrame, geometry_type: str) -> str:
             "is_animated": "0",
         },
     )
-    _symbol_layer(default_symbol, geometry_type, "#808080")
+    _symbol_layer(default_symbol, geometry_type, "#FF69B4")
     return ET.tostring(root, encoding="unicode")
 
 

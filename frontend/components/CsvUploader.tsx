@@ -22,6 +22,7 @@ export function CsvUploader({ file, busy, compact = false, onFile }: CsvUploader
         ref={inputRef}
         type="file"
         accept=".csv,text/csv"
+        aria-label="Pilih file CSV dari perangkat"
         className="sr-only"
         disabled={busy}
         onChange={(event) => {
@@ -90,7 +91,7 @@ export function CsvUploader({ file, busy, compact = false, onFile }: CsvUploader
             )}
           </p>
 
-          <div className="flex items-center gap-2 text-[11px] text-slate-400">
+          <div className="flex items-center gap-2 text-[11px] text-slate-500">
             <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-slate-600 border border-slate-200">.CSV</span>
             <span>·</span>
             <span>Maksimal 1 GB</span>

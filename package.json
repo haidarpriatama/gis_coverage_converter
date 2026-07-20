@@ -6,6 +6,9 @@
     "dev:backend": "cd backend && .venv/bin/python -m uvicorn app.main:app --reload --host 0.0.0.0 --port ${BACKEND_PORT:-8000}",
     "dev:frontend": "cd frontend && npm run dev",
     "test:backend": "cd backend && PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/pytest -q",
-    "lint:frontend": "cd frontend && npm run lint"
+    "lint:frontend": "cd frontend && npm run lint",
+    "audit:backend": "cd backend && .venv/bin/pip-audit -r requirements.txt --progress-spinner off --cache-dir /tmp/csv-converter-pip-audit",
+    "audit:frontend": "cd frontend && npm audit --omit=dev",
+    "build:frontend": "cd frontend && npm run build"
   }
 }

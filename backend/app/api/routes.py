@@ -1,5 +1,4 @@
 import logging
-import os
 import shutil
 import tempfile
 from pathlib import Path
@@ -11,6 +10,7 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import Response, StreamingResponse
 from pydantic import ValidationError
 
+from app.config import max_upload_bytes
 from app.schemas.conversion import ConversionOptions, CsvInspection, OutputFormat
 from app.services.csv_service import (
     CsvValidationError,
@@ -27,17 +27,8 @@ router = APIRouter(prefix="/api")
 logger = logging.getLogger(__name__)
 
 
-def _max_upload_bytes() -> int:
-    raw_value = os.getenv("MAX_UPLOAD_SIZE_MB", "1024")
-    try:
-        size_mb = max(1, int(raw_value))
-    except ValueError:
-        size_mb = 1024
-    return size_mb * 1024 * 1024
-
-
 async def _save_upload_to_temp(upload: UploadFile) -> tuple[str, Path]:
-    limit = _max_upload_bytes()
+    limit = max_upload_bytes()
     temporary_directory = tempfile.mkdtemp(prefix="coverage-upload-")
     upload_path = Path(temporary_directory) / safe_csv_filename(upload.filename)
     total_size = 0
@@ -77,7 +68,7 @@ async def _stream_file_and_cleanup(path: Path, temporary_directory: str) -> Asyn
 
 
 @router.get("/health")
-def health_check() -> dict[str, str]:
+async def health_check() -> dict[str, str]:
     return {"status": "ok"}
 
 
@@ -112,6 +103,7 @@ async def convert_csv_endpoint(
         validate_csv_filename(file.filename)
         temporary_directory, upload_path = await _save_upload_to_temp(file)
         parsed = parse_csv_path(upload_path)
+        upload_path.unlink(missing_ok=True)
         options = ConversionOptions(
             longitude_column=longitude_column,
             latitude_column=latitude_column,
@@ -126,7 +118,6 @@ async def convert_csv_endpoint(
 
         extension = options.output_format.value
         download_name = output_filename(file.filename or "upload.csv", extension)
-        temporary_directory = tempfile.mkdtemp(prefix="coverage-grid-")
         output_path = Path(temporary_directory) / download_name
 
         if options.output_format == OutputFormat.KML:
